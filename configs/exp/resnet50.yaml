@@ -1,0 +1,3 @@
+model:
+  name: resnet50.a1_in1k
+  pretrained: true

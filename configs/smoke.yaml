@@ -1,0 +1,9 @@
+# Synthetic data, used only to check that the pipeline runs. Numbers from this mean nothing.
+data:
+  root: data/synthetic
+  manifest: splits/synthetic_manifest.csv
+  folds: splits/synthetic_folds.csv
+model:
+  name: v1_cnn
+train:
+  image_size: 64

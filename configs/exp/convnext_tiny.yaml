@@ -1,0 +1,6 @@
+model:
+  name: convnext_tiny.fb_in22k_ft_in1k
+  pretrained: true
+train:
+  lr: 1.0e-4
+  weight_decay: 0.05

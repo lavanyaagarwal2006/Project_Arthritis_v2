@@ -1,0 +1,70 @@
+"""Synthetic dataset in the RAM-H1200 benchmark layout, for pipeline tests only.
+
+Each "joint" is a bright blob with a dark notch whose size grows with the SvdH score.
+Patients have several hands (bilateral + follow-up), spread across 3 centers, so grouping
+bugs show up as leakage. Numbers from this data mean nothing about real performance.
+
+Usage: python scripts/make_synthetic.py data/synthetic [--patients 60]
+"""
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from PIL import Image
+
+JOINTS = ["R", "U", "IP", "L", "MCP-T", "MCP-I", "MCP-M", "MCP-R", "MCP-S", "CMC-T",
+          "PIP-I", "PIP-M", "PIP-R", "PIP-S", "S", "Tm"]
+
+
+def joint_image(rng, score: int, size: int = 72) -> np.ndarray:
+    yy, xx = np.mgrid[:size, :size]
+    cx, cy = size / 2 + rng.normal(0, 3), size / 2 + rng.normal(0, 3)
+    r = size * rng.uniform(0.28, 0.34)
+    img = 60 + 120 * (((xx - cx) ** 2 + (yy - cy) ** 2) < r ** 2) + rng.normal(0, 18, (size, size))
+    if score > 0:  # erosion: a dark notch on the blob edge
+        ang = rng.uniform(0, 2 * np.pi)
+        nx, ny = cx + r * np.cos(ang), cy + r * np.sin(ang)
+        nr = 2.5 + 1.8 * score
+        img[((xx - nx) ** 2 + (yy - ny) ** 2) < nr ** 2] = 60
+    return np.clip(img, 0, 255).astype(np.uint8)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("out", type=Path)
+    ap.add_argument("--patients", type=int, default=60)
+    ap.add_argument("--seed", type=int, default=0)
+    args = ap.parse_args()
+    rng = np.random.default_rng(args.seed)
+    meta = []
+    splits = {"train": {}, "val": {}, "test": {}}
+    for pi in range(args.patients):
+        pid = f"P{pi:04d}"
+        split = "test" if pi % 5 == 0 else ("val" if pi % 7 == 0 else "train")
+        center = ["HMCRD", "SARC", "SCGH"][pi % 3]
+        is_ra = int(rng.random() < 0.8)
+        severity = rng.uniform(0, 0.35) if is_ra else 0.0
+        for v in range(rng.integers(1, 4)):          # visits
+            for side in ("L", "R"):
+                case = f"{pid}_v{v}_{side}"
+                scores = {}
+                d = args.out / split / case
+                d.mkdir(parents=True, exist_ok=True)
+                for j in JOINTS:
+                    s = int(rng.choice([1, 2, 3], p=[0.6, 0.3, 0.1])) if rng.random() < severity * (1 + 0.3 * v) else 0
+                    scores[f"BE_{j}"] = s
+                    Image.fromarray(joint_image(rng, s)).save(d / f"{j}.bmp")
+                splits[split][f"{case}.png"] = scores
+                meta.append({"File Name": f"{case}.png", "Normalized PatientID": pid, "Center": center, "isRA": is_ra})
+    for s, rec in splits.items():
+        (args.out / s / "_annotation_be_scores.json").write_text(json.dumps(rec))
+    pd.DataFrame(meta).to_excel(args.out / "Metadata.xlsx", index=False)
+    print(f"synthetic dataset: {args.patients} patients, {len(meta)} hands -> {args.out}")
+
+
+if __name__ == "__main__":
+    main()

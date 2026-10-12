@@ -1,0 +1,5 @@
+model:
+  name: densenet121.tv_in1k
+  pretrained: true
+train:
+  lr: 1.0e-4

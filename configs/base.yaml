@@ -1,0 +1,42 @@
+# Shared defaults. Experiment files in configs/exp/ override these keys.
+seed: 2026
+
+data:
+  root: data/RAM-H1200-v1
+  manifest: splits/joints_manifest.csv
+  folds: splits/folds.csv
+  score_type: BE              # BE (erosion) for now; JSN later
+  positive_threshold: 1       # erosion present if SvdH BE >= 1
+  # Metadata.xlsx columns. "auto" means detect by name; set explicitly if detection fails.
+  metadata_file: auto
+  metadata_image_col: auto
+  metadata_patient_col: auto
+  metadata_center_col: auto
+  metadata_isra_col: auto
+  sealed_split: test          # official test split: never used until the final run
+
+cv:
+  n_folds: 5
+
+train:
+  image_size: 224
+  batch_size: 64
+  epochs: 40
+  lr: 3.0e-4
+  weight_decay: 1.0e-4
+  warmup_epochs: 2
+  early_stop_patience: 8      # on fold-validation AUROC
+  balanced_sampling: true
+  num_workers: 4
+  amp: true
+  augment:
+    rotate_deg: 10
+    scale: [0.85, 1.0]
+    brightness: 0.15
+    contrast: 0.15
+    hflip: false              # never: left/right anatomy matters
+
+eval:
+  n_bootstrap: 2000
+  target_sensitivity: 0.90
+  ece_bins: 15

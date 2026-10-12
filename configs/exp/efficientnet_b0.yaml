@@ -1,0 +1,3 @@
+model:
+  name: efficientnet_b0.ra_in1k
+  pretrained: true
