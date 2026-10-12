@@ -14,3 +14,8 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 wandb/
+
+# synthetic smoke-test outputs
+results/smoke_*/
+splits/synthetic_*
+results/summary.csv.smoke
