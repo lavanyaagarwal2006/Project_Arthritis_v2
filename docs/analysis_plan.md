@@ -91,7 +91,7 @@ the primary endpoint. Record the decision in Amendments.
 ## 5. Models (each compared against the rung below)
 
 1. Majority / prevalence baseline (AUROC 0.5 by construction; reported for the operating point)
-2. v1 4-block CNN, ported to PyTorch, trained from scratch
+2. Small 4-block CNN trained from scratch (no pretraining)
 3. ResNet-50 (ImageNet), fine-tuned
 4. DenseNet121 (ImageNet), fine-tuned
 5. ConvNeXt-Tiny / EfficientNet-B0 (ImageNet), fine-tuned

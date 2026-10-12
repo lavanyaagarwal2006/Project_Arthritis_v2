@@ -18,7 +18,7 @@
 
 ## Tags
 - `sap-v1.0`: analysis plan frozen
-- `v0.1-baselines`: majority, pixel logistic regression, v1 CNN
+- `v0.1-baselines`: majority, pixel logistic regression, scratch CNN
 - `v0.2-pretrained`: ResNet-50, DenseNet121, ConvNeXt-T
 - `v0.3-loco`: leave-one-center-out
 - `v1.0-test`: sealed test result

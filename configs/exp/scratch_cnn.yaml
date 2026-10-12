@@ -1,4 +1,4 @@
 model:
-  name: v1_cnn
+  name: scratch_cnn
 train:
   lr: 1.0e-3

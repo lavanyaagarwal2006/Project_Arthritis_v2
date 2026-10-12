@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 
 
-class V1CNN(nn.Module):
-    """The v1 4-block CNN, ported from Keras so the ladder has an honest from-scratch rung."""
+class ScratchCNN(nn.Module):
+    """Small 4-block CNN trained from scratch: shows how much ImageNet pretraining adds."""
 
     def __init__(self, in_ch: int = 1):
         super().__init__()
@@ -33,15 +33,15 @@ class TimmBinary(nn.Module):
 def build_model(mcfg: dict) -> tuple[nn.Module, int, bool]:
     """Returns (model, input channels, uses ImageNet normalisation)."""
     name = mcfg["name"]
-    if name == "v1_cnn":
-        return V1CNN(in_ch=1), 1, False
+    if name == "scratch_cnn":
+        return ScratchCNN(in_ch=1), 1, False
     pretrained = mcfg.get("pretrained", True)
     return TimmBinary(name, pretrained, mcfg.get("drop_rate", 0.2)), 3, pretrained
 
 
 def gradcam_target_layer(model: nn.Module) -> nn.Module:
     """Last conv-like block, used by Grad-CAM (Phase 1b)."""
-    if isinstance(model, V1CNN):
+    if isinstance(model, ScratchCNN):
         return model.features[-1][0]
     net = model.net
     for attr in ("features", "stages", "layer4"):

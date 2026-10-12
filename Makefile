@@ -29,11 +29,11 @@ smoke:              ## whole pipeline on synthetic data, including one 2-epoch t
 	$(PY) scripts/make_synthetic.py data/synthetic
 	$(PY) -m arthritis.manifest --exp configs/smoke.yaml
 	$(PY) -m arthritis.splits --exp configs/smoke.yaml
-	$(PY) -m arthritis.train --exp configs/smoke.yaml --smoke --run-name smoke_v1cnn
-	$(PY) -m arthritis.evaluate results/smoke_v1cnn --n-boot 200
+	$(PY) -m arthritis.train --exp configs/smoke.yaml --smoke --run-name smoke_scratch
+	$(PY) -m arthritis.evaluate results/smoke_scratch --n-boot 200
 
 ladder:             ## every rung, internal CV
-	for e in majority pixel_logreg v1_cnn resnet50 densenet121 convnext_tiny; do \
+	for e in majority pixel_logreg scratch_cnn resnet50 densenet121 convnext_tiny; do \
 	  $(PY) -m arthritis.train --exp $$e --scheme cv --run-name $$e\_cv && \
 	  $(PY) -m arthritis.evaluate results/$$e\_cv; done
 

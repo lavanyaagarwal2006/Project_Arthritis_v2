@@ -4,6 +4,6 @@ data:
   manifest: splits/synthetic_manifest.csv
   folds: splits/synthetic_folds.csv
 model:
-  name: v1_cnn
+  name: scratch_cnn
 train:
   image_size: 64
