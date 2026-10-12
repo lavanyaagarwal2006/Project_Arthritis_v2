@@ -129,6 +129,8 @@ def run_torch(cfg: dict, train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFr
             scaler.scale(loss).backward(); scaler.step(opt); scaler.update(); sched.step()
             tot += loss.item() * len(y)
         v_auc = auroc(val.label.values, predict(val))
+        if not np.isfinite(v_auc):  # inner-val has one class (tiny smoke subsets): keep training, save last epoch
+            v_auc = float(ep) * 1e-3
         log(f"    epoch {ep:02d} loss {tot / max(1, len(tr_dl.dataset)):.4f} inner-val AUROC {v_auc:.4f} ({time.time() - t0:.0f}s)")
         if v_auc > best + 1e-4:
             best, bad = v_auc, 0

@@ -34,7 +34,7 @@ _No results yet._
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# 1. Get data (gated: accept the terms on Hugging Face first, then `huggingface-cli login`)
+# 1. Get data (gated: accept the terms on Hugging Face first, then log in, see docs/data.md)
 bash scripts/download_data.sh            # -> data/RAM-H1200-v1/
 
 # 2. Inspect the layout and write the manifest + splits (no GPU needed)

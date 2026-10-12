@@ -10,7 +10,7 @@
   and bone segmentation. `Metadata.xlsx` has `isRA`, `Normalized PatientID` and `Center`.
 - **License:** CC BY-NC-SA 4.0. Non-commercial use only, share-alike, attribution required.
   Commercial deployment needs separate permission or our own data.
-- **Access:** gated. Accept the terms on the Hugging Face page, then run `huggingface-cli login`.
+- **Access:** gated. Accept the terms on the Hugging Face page, then run `python -c "from huggingface_hub import login; login()"`.
 
 ## RAM-W600 (not used for the primary analysis)
 
