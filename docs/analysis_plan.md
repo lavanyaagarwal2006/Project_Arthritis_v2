@@ -130,4 +130,25 @@ Results are reported following the TRIPOD+AI and CLAIM 2024 checklists.
 
 ## Amendments
 
-(none yet)
+**A1 (2026-10-11, before freeze; based on labels and metadata only, no model outputs).** The
+dataset was inspected with `make inspect`, and the plan was adjusted as follows.
+
+- **Erosion scale.** Observed per-joint erosion scores are {0, 1, 2, 3, 5}, which is the SvdH
+  hand erosion scale 0–5 with no 4s present. The binary endpoint (score ≥ 1) is unchanged. Any
+  ordinal model uses the observed levels.
+- **Hand-level negatives.** There are 170 hands with no erosion (146 train, 12 val, 12 test),
+  above the 30-hand rule in Section 3, so the joint-level endpoint stays primary.
+- **Patient key.** `Normalized PatientID` restarts its numbering in each center: file names carry
+  the center plus the same number. The patient key is therefore `center + PatientID`, decided
+  automatically by `manifest.py` and asserted in a unit test. Matching on the number alone would
+  merge different people from different centers.
+- **Metadata unit.** Metadata is per study (`Mapped Image Stem`, without the `_L`/`_R` suffix),
+  and each study can contribute both hands. Both hands of a patient always share a fold.
+- **Leave-one-center-out.** Held-out centers are HMCRD, SARC and SCGH. HU1–3 (30 hands in total)
+  are train-only, set by `loco_min_hands: 50`.
+- **Pixel spacing differs by center.** It is 0.175 mm in a group matching SARC's count and 0.15 mm
+  in the rest. This is a possible shortcut, because a model can learn to recognise the center.
+  Leave-one-center-out measures how much it matters, and resampling crops to a common mm/pixel
+  scale is planned (Methods #1).
+- **Subgroups to report.** Sex (F 746 / M 78 / O 12 studies), age band, hand side, and follow-up
+  visit vs first visit (StudyID).

@@ -109,6 +109,22 @@ def _pick_col(df: pd.DataFrame, explicit: str, keywords: list[str]) -> str | Non
     return None
 
 
+SIDE_SUFFIXES = ("_L", "_R")
+
+
+def _study_stem(case: str) -> str:
+    """'JP_HMCRD_P0185_20150602_0498_R' -> 'JP_HMCRD_P0185_20150602_0498' (metadata is per study, not per hand)."""
+    return case[:-2] if case.endswith(SIDE_SUFFIXES) else case
+
+
+def _file_patient_token(case: str) -> tuple[str, int | None]:
+    """'JP_HMCRD_P0185_...' -> ('HMCRD', 185). Returns (center, number) parsed from the file name."""
+    parts = case.split("_")
+    if len(parts) >= 3 and parts[2].startswith("P") and parts[2][1:].isdigit():
+        return parts[1], int(parts[2][1:])
+    return "", None
+
+
 def _join_metadata(root: Path, df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
     d = cfg["data"]
     if d["metadata_file"] != "auto":
@@ -120,37 +136,66 @@ def _join_metadata(root: Path, df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
         meta_path = cands[0]
     meta = pd.read_excel(meta_path) if meta_path.suffix == ".xlsx" else pd.read_csv(meta_path)
 
-    pcol = _pick_col(meta, d["metadata_patient_col"], ["patientid", "patient"])
+    pcol = _pick_col(meta, d["metadata_patient_col"], ["normalizedpatientid", "patientid", "patient"])
     ccol = _pick_col(meta, d["metadata_center_col"], ["center", "centre", "site", "hospital"])
     rcol = _pick_col(meta, d["metadata_isra_col"], ["isra"])
     icol = d["metadata_image_col"]
-    if icol == "auto":  # the column whose values best match case names
-        cases = set(df["case"])
+    df = df.copy()
+    df["study"] = df["case"].map(_study_stem)
+    df["side"] = df["case"].map(lambda c: c[-1] if c.endswith(SIDE_SUFFIXES) else "")
+    if icol == "auto":  # the column whose values best match per-study stems (or per-hand case names)
+        keys = set(df["study"]) | set(df["case"])
         best, best_hits = None, 0
         for c in meta.columns:
-            vals = meta[c].astype(str).map(lambda s: Path(s).stem)
-            hits = len(cases & set(vals))
+            hits = len(keys & set(meta[c].astype(str).map(lambda s: Path(s).stem)))
             if hits > best_hits:
                 best, best_hits = c, hits
         icol = best
     if pcol is None or icol is None:
-        raise SystemExit(
-            f"Could not identify patient/image columns in {meta_path.name}: columns={list(meta.columns)}. "
-            "Set data.metadata_patient_col / metadata_image_col explicitly.")
+        raise SystemExit(f"Could not identify patient/image columns in {meta_path.name}: columns={list(meta.columns)}. "
+                         "Set data.metadata_patient_col / metadata_image_col explicitly.")
 
-    m = pd.DataFrame({"case": meta[icol].astype(str).map(lambda s: Path(s).stem),
-                      "patient_id": meta[pcol].astype(str)})
-    m["center"] = meta[ccol].astype(str) if ccol else "unknown"
+    m = pd.DataFrame({"study": meta[icol].astype(str).map(lambda s: Path(s).stem),
+                      "meta_pid": meta[pcol].astype(str).str.strip()})
+    m["center"] = meta[ccol].astype(str).str.strip() if ccol else "unknown"
     m["is_ra"] = meta[rcol] if rcol else pd.NA
-    m = m.drop_duplicates("case")
-    out = df.merge(m, on="case", how="left")
-    n_unmatched = out["patient_id"].isna().sum()
-    if n_unmatched:
-        bad = out.loc[out["patient_id"].isna(), "case"].unique()[:5]
-        raise SystemExit(f"{n_unmatched} joint rows have no metadata match (e.g. {list(bad)}). "
-                         f"Check data.metadata_image_col (auto-picked '{icol}').")
-    print(f"metadata: {meta_path.name} image_col='{icol}' patient_col='{pcol}' center_col='{ccol}' isra_col='{rcol}'")
-    return out
+    for src, dst in (("StudyID", "study_index"), ("Sex", "sex"), ("Age", "age"), ("PixelSpacing", "pixel_spacing")):
+        if src in meta.columns:
+            m[dst] = meta[src]
+    m = m.drop_duplicates("study")
+
+    # match on per-study stem first, per-hand name as a fallback
+    out = df.merge(m, on="study", how="left")
+    miss = out["meta_pid"].isna()
+    if miss.any():
+        m2 = m.rename(columns={"study": "case"})
+        fb = df[miss.values].drop(columns=["study"]).merge(m2, on="case", how="left")
+        fb["study"] = df.loc[miss.values, "study"].values
+        out = pd.concat([out[~miss], fb], ignore_index=True)
+    if out["meta_pid"].isna().any():
+        bad = out.loc[out["meta_pid"].isna(), "case"].unique()[:5]
+        raise SystemExit(f"{out.meta_pid.isna().sum()} joint rows have no metadata match (e.g. {list(bad)}). "
+                         f"Matched on column '{icol}'.")
+
+    # Patient key. If the file-name patient number equals the metadata ID everywhere, IDs are numbered per
+    # center (the center is part of the name), so the key must include the center. Otherwise treat the
+    # metadata ID as global. Wrongly merging two patients is conservative; wrongly splitting one leaks.
+    tok = out["case"].map(_file_patient_token)
+    file_center, file_num = tok.map(lambda t: t[0]), tok.map(lambda t: t[1])
+    num_ok = file_num.notna() & (pd.to_numeric(out["meta_pid"], errors="coerce") == file_num)
+    ctr_ok = (file_center == out["center"]) | (file_center == "")
+    if not ctr_ok.all():
+        print(f"WARNING: {(~ctr_ok).sum()} rows: file-name center differs from metadata center")
+    rule = d.get("patient_key", "auto")
+    if rule == "auto":
+        rule = "center_id" if num_ok.all() else "global_id"
+    out["patient_id"] = (out["center"] + "_" + out["meta_pid"]) if rule == "center_id" else out["meta_pid"]
+    ids_multi_center = out.groupby("meta_pid").center.nunique()
+    print(f"metadata: {meta_path.name} | image_col='{icol}' patient_col='{pcol}' center_col='{ccol}' isra_col='{rcol}'")
+    print(f"patient key rule: {rule} | file-name numbers match metadata IDs: {num_ok.mean():.1%} | "
+          f"metadata IDs used in >1 center: {int((ids_multi_center > 1).sum())} | "
+          f"patients: {out.patient_id.nunique()}")
+    return out.drop(columns=["meta_pid"])
 
 
 def build_manifest(cfg: dict) -> pd.DataFrame:
@@ -181,7 +226,10 @@ def summarize(df: pd.DataFrame) -> str:
         lines.append(f"{s} | {d.patient_id.nunique()} | {d.case.nunique()} | {len(d)} | "
                      f"{d.label.mean():.3f} | {int(hand_pos.sum())}/{len(hand_pos)}")
     lines.append(f"score distribution: {df.score.value_counts().sort_index().to_dict()}")
-    lines.append(f"centers: {df.groupby('center').patient_id.nunique().to_dict()}")
+    lines.append(f"patients per center: {df.groupby('center').patient_id.nunique().to_dict()}")
+    lines.append(f"hands per center: {df.groupby('center').case.nunique().to_dict()}")
+    if "is_ra" in df:
+        lines.append(f"hands by isRA: {df.drop_duplicates('case').is_ra.value_counts(dropna=False).to_dict()}")
     leak = df.groupby("patient_id").split.nunique()
     lines.append(f"patients appearing in >1 official split: {int((leak > 1).sum())}")
     return "\n".join(lines)

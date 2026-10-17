@@ -42,11 +42,13 @@ def seed_everything(seed: int) -> None:
         pass
 
 
-def outer_folds(dev: pd.DataFrame, scheme: str) -> list[tuple[str, np.ndarray]]:
+def outer_folds(dev: pd.DataFrame, scheme: str, min_hands: int = 50) -> list[tuple[str, np.ndarray]]:
     if scheme == "cv":
         return [(str(k), (dev.fold == k).values) for k in sorted(dev.fold.unique())]
     if scheme == "loco":
-        return [(str(c), (dev.center == c).values) for c in sorted(dev.center.unique())]
+        hands = dev.groupby("center").case.nunique()
+        big = sorted(hands[hands >= min_hands].index)  # tiny centers always stay in training
+        return [(str(c), (dev.center == c).values) for c in big]
     raise ValueError(scheme)
 
 
@@ -184,7 +186,7 @@ def main() -> None:
 
     preds = np.full(len(dev_df), np.nan)
     outer_id = np.empty(len(dev_df), dtype=object)
-    for name, te_mask in outer_folds(dev_df, args.scheme):
+    for name, te_mask in outer_folds(dev_df, args.scheme, cfg["data"].get("loco_min_hands", 50)):
         tr_all, te = dev_df[~te_mask], dev_df[te_mask]
         if te.label.nunique() < 2:
             log(f"  fold {name}: test fold has one class only; predictions kept, AUROC undefined for this fold")
@@ -200,10 +202,16 @@ def main() -> None:
         preds[te_mask] = p
         outer_id[te_mask] = name
 
-    assert np.isfinite(preds).all(), "some dev joints were never predicted"
-    out = dev_df[["case", "joint", "patient_id", "center", "score", "label"]].copy()
-    out["fold"] = outer_id
-    out["prob"] = preds
+    done = np.isfinite(preds)
+    if args.scheme == "cv":
+        assert done.all(), "some dev joints were never predicted"
+    elif not done.all():
+        log(f"LOCO: {int((~done).sum())} joints from small centers were train-only and are not scored")
+    keep = [c for c in ("case", "joint", "patient_id", "center", "side", "study_index", "sex", "age",
+                        "score", "label") if c in dev_df.columns]
+    out = dev_df.loc[done, keep].copy()
+    out["fold"] = outer_id[done]
+    out["prob"] = preds[done]
     out.to_csv(run_dir / "oof_predictions.csv", index=False)
     log(f"wrote {run_dir / 'oof_predictions.csv'}; next: python -m arthritis.evaluate {run_dir.relative_to(resolve('.'))}")
 

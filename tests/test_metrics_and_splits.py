@@ -79,3 +79,26 @@ def test_leaked_patient_is_moved_to_sealed():
     leak["split"] = "train"; leak["case"] = leak["case"] + "_dup"
     m = attach(pd.concat([man, leak]), make_folds(pd.concat([man, leak]), 5, 0, "test"))
     assert (m.loc[m.patient_id == "P0", "role"] == "sealed").all()
+
+
+def test_study_stem_and_file_patient_token():
+    from arthritis.manifest import _file_patient_token, _study_stem
+    assert _study_stem("JP_HMCRD_P0185_20150602_0498_R") == "JP_HMCRD_P0185_20150602_0498"
+    assert _study_stem("JP_HMCRD_P0185_20150602_0498") == "JP_HMCRD_P0185_20150602_0498"
+    assert _file_patient_token("JP_SARC_P0001_20100423_7383_R") == ("SARC", 1)
+
+
+def test_same_patient_number_in_two_centers_is_two_patients(tmp_path):
+    """Patient numbers restart per center in RAM-H1200; HMCRD P0001 and SARC P0001 are different people."""
+    import json
+    from arthritis.manifest import _join_metadata
+    meta = pd.DataFrame({"Mapped Image Stem": ["JP_HMCRD_P0001_20200101_1111", "JP_SARC_P0001_20200101_2222"],
+                         "Normalized PatientID": [1, 1], "Center": ["HMCRD", "SARC"], "isRA": [1, 1]})
+    meta.to_excel(tmp_path / "Metadata.xlsx", index=False)
+    df = pd.DataFrame({"case": ["JP_HMCRD_P0001_20200101_1111_L", "JP_SARC_P0001_20200101_2222_R"],
+                       "joint": ["R", "R"], "score": [0, 1], "label": [0, 1], "split": ["train", "train"]})
+    cfg = {"data": {"metadata_file": str(tmp_path / "Metadata.xlsx"), "metadata_image_col": "auto",
+                    "metadata_patient_col": "auto", "metadata_center_col": "auto", "metadata_isra_col": "auto",
+                    "patient_key": "auto"}}
+    out = _join_metadata(tmp_path, df, cfg)
+    assert out.patient_id.nunique() == 2

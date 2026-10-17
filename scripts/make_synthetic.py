@@ -34,36 +34,47 @@ def joint_image(rng, score: int, size: int = 72) -> np.ndarray:
 
 
 def main() -> None:
+    """Mirrors the real RAM-H1200 layout: SvdH_Scoring/SvdH_BE_Scoring/<split>/<case>/<JOINT>.bmp,
+    case names JP_<CENTER>_P<num>_<date>_<id>_<L|R>, a per-study Metadata.xlsx whose patient numbers
+    restart at 1 in every center (so the same number means different people in different centers)."""
     ap = argparse.ArgumentParser()
     ap.add_argument("out", type=Path)
     ap.add_argument("--patients", type=int, default=60)
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
+    base = args.out / "SvdH_Scoring" / "SvdH_BE_Scoring"
     meta = []
     splits = {"train": {}, "val": {}, "test": {}}
+    centers = ["HMCRD", "SARC", "SCGH", "HU2"]
+    per_center_counter = {c: 0 for c in centers}
     for pi in range(args.patients):
-        pid = f"P{pi:04d}"
+        center = centers[0] if pi % 10 < 4 else centers[1] if pi % 10 < 7 else centers[2] if pi % 10 < 9 else centers[3]
+        per_center_counter[center] += 1
+        num = per_center_counter[center]
         split = "test" if pi % 5 == 0 else ("val" if pi % 7 == 0 else "train")
-        center = ["HMCRD", "SARC", "SCGH"][pi % 3]
-        is_ra = int(rng.random() < 0.8)
+        is_ra = int(rng.random() < 0.85)
         severity = rng.uniform(0, 0.35) if is_ra else 0.0
-        for v in range(rng.integers(1, 4)):          # visits
+        for v in range(int(rng.integers(1, 4))):
+            stem = f"JP_{center}_P{num:04d}_{2012 + 3 * v}0{v + 1}15_{rng.integers(1000, 9999)}"
             for side in ("L", "R"):
-                case = f"{pid}_v{v}_{side}"
-                scores = {}
-                d = args.out / split / case
+                case = f"{stem}_{side}"
+                d = base / split / case
                 d.mkdir(parents=True, exist_ok=True)
+                scores = {}
                 for j in JOINTS:
-                    s = int(rng.choice([1, 2, 3], p=[0.6, 0.3, 0.1])) if rng.random() < severity * (1 + 0.3 * v) else 0
+                    s = int(rng.choice([1, 2, 3, 5], p=[0.6, 0.25, 0.05, 0.1])) if rng.random() < severity * (1 + 0.3 * v) else 0
                     scores[f"BE_{j}"] = s
-                    Image.fromarray(joint_image(rng, s)).save(d / f"{j}.bmp")
-                splits[split][f"{case}.png"] = scores
-                meta.append({"File Name": f"{case}.png", "Normalized PatientID": pid, "Center": center, "isRA": is_ra})
+                    Image.fromarray(joint_image(rng, min(s, 3))).save(d / f"{j}.bmp")
+                splits[split][f"{case}.bmp"] = scores
+            meta.append({"Mapped Image Stem": stem, "StudyID": v + 1, "Normalized PatientID": num, "isRA": is_ra,
+                         "Sex": "F", "Age": 55.0, "Center": center, "PixelSpacing": "[0.175, 0.175]",
+                         "ImageSize": "[1722, 1430]", "LR": "LR"})
     for s, rec in splits.items():
-        (args.out / s / "_annotation_be_scores.json").write_text(json.dumps(rec))
+        (base / s).mkdir(parents=True, exist_ok=True)
+        (base / s / "_annotation_be_scores.json").write_text(json.dumps(rec))
     pd.DataFrame(meta).to_excel(args.out / "Metadata.xlsx", index=False)
-    print(f"synthetic dataset: {args.patients} patients, {len(meta)} hands -> {args.out}")
+    print(f"synthetic dataset: {args.patients} patients, {len(meta)} studies -> {args.out}")
 
 
 if __name__ == "__main__":

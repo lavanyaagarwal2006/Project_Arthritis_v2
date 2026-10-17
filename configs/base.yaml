@@ -13,6 +13,8 @@ data:
   metadata_patient_col: auto
   metadata_center_col: auto
   metadata_isra_col: auto
+  patient_key: auto           # auto | center_id | global_id (see manifest.py)
+  loco_min_hands: 50          # centers with fewer hands are never a held-out LOCO fold (always train)
   sealed_split: test          # official test split: never used until the final run
 
 cv:

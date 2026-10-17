@@ -1,0 +1,142 @@
+# Inspection of data/RAM-H1200-v1
+
+## Folder layout
+  .: .md×1, .xlsx×1, <none>×1
+  .cache/huggingface: .tag×1, <none>×1
+  .cache/huggingface/trees: .json×1
+  .cache/huggingface/download: .lock×3, .metadata×3
+  .cache/huggingface/download/Segmentation/...: .lock×1206, .metadata×1206
+  .cache/huggingface/download/SvdH_Scoring/...: .lock×37212, .metadata×37212
+  Segmentation/test: .bmp×267, .json×2
+  Segmentation/train: .bmp×793, .json×2
+  Segmentation/val: .bmp×140, .json×2
+  SvdH_Scoring/SvdH_BE_Scoring/<3 dirs, e.g. test>: .json×2
+  SvdH_Scoring/SvdH_BE_Scoring/test/<267 dirs, e.g. JP_SCGH_P0050_20110922_2435_L>: .bmp×16
+  SvdH_Scoring/SvdH_BE_Scoring/train/<793 dirs, e.g. JP_HMCRD_P0185_20150602_0498_R>: .bmp×16
+  SvdH_Scoring/SvdH_BE_Scoring/val/<140 dirs, e.g. JP_HMCRD_P0178_20171001_5121_L>: .bmp×16
+  SvdH_Scoring/SvdH_JSN_Scoring/<3 dirs, e.g. test>: .json×2
+  SvdH_Scoring/SvdH_JSN_Scoring/test/<267 dirs, e.g. JP_SCGH_P0050_20110922_2435_L>: .bmp×15
+  SvdH_Scoring/SvdH_JSN_Scoring/train/<793 dirs, e.g. JP_HMCRD_P0185_20150602_0498_R>: .bmp×15
+  SvdH_Scoring/SvdH_JSN_Scoring/val/<140 dirs, e.g. JP_HMCRD_P0178_20171001_5121_L>: .bmp×15
+
+## JSON files
+- .cache/huggingface/trees/eeca79b547d4aabb1cdbff81a8a43e6be4630976.json
+  type=dict len=2
+  first keys: ['format_version', 'files']
+  first value: 1
+- Segmentation/test/_annotations_be_rle.coco.json
+  type=dict len=3
+  first keys: ['images', 'annotations', 'categories']
+  COCO: 267 images, 1308 annots, categories=['bone-erosion', 'Non-SvdH-BE', 'SvdH-BE-50', 'SvdH-BE-90']
+  first image entry: {'id': 6, 'license': 1, 'file_name': 'JP_HMCRD_P0163_20211117_5941_R.bmp', 'height': 1431, 'width': 862, 'date_captured': '2026-03-27T15:04:11+00:00', 'extra': {'name': 'JP_HMCRD_P0163_20211117_5941_R.bmp'}}
+- Segmentation/test/_annotations_bone_rle.coco.json
+  type=dict len=3
+  first keys: ['images', 'annotations', 'categories']
+  COCO: 267 images, 8130 annots, categories=['bone-6U7D-RuyD', 'Capitate', 'DP1', 'DP2', 'DP3', 'DP4', 'DP5', 'Hamate', 'Intravenous cannula', 'Lunate', 'MC1', 'MC2', 'MC3', 'MC4', 'MC5', 'MP2', 'MP3', 'MP4', 'MP5', 'Metal Implant', 'PP1', 'PP2', 'PP3', 'PP4', 'PP5', 'Pisifrom_Triquetrum', 'Radius', 'Ring', 'Scaphoid', 'Sesamoid', 'SoftTissue', 'Trapezium', 'Trapezoid', 'Ulna']
+  first image entry: {'id': 15, 'license': 1, 'file_name': 'JP_HMCRD_P0060_20210415_7522_L.bmp', 'height': 1431, 'width': 865, 'date_captured': '2026-03-27T09:44:25+00:00', 'extra': {'name': 'JP_HMCRD_P0060_20210415_7522_L.bmp'}}
+- Segmentation/train/_annotations_be_rle.coco.json
+  type=dict len=3
+  first keys: ['images', 'annotations', 'categories']
+  COCO: 793 images, 2123 annots, categories=['bone-erosion', 'Non-SvdH-BE', 'SvdH-BE-50', 'SvdH-BE-90']
+  first image entry: {'id': 0, 'license': 1, 'file_name': 'JP_SCGH_P0025_20111028_5793_R.bmp', 'height': 1431, 'width': 891, 'date_captured': '2026-03-27T15:04:11+00:00', 'extra': {'name': 'JP_SCGH_P0025_20111028_5793_R.bmp'}}
+- Segmentation/train/_annotations_bone_rle.coco.json
+  type=dict len=3
+  first keys: ['images', 'annotations', 'categories']
+  COCO: 793 images, 24480 annots, categories=['bone-6U7D-RuyD', 'Capitate', 'DP1', 'DP2', 'DP3', 'DP4', 'DP5', 'Hamate', 'Intravenous cannula', 'Lunate', 'MC1', 'MC2', 'MC3', 'MC4', 'MC5', 'MP2', 'MP3', 'MP4', 'MP5', 'Metal Implant', 'PP1', 'PP2', 'PP3', 'PP4', 'PP5', 'Pisifrom_Triquetrum', 'Radius', 'Ring', 'Scaphoid', 'Sesamoid', 'SoftTissue', 'Trapezium', 'Trapezoid', 'Ulna']
+  first image entry: {'id': 0, 'license': 1, 'file_name': 'JP_SCGH_P0024_20130727_1661_L.bmp', 'height': 1431, 'width': 893, 'date_captured': '2026-03-27T09:44:25+00:00', 'extra': {'name': 'JP_SCGH_P0024_20130727_1661_L.bmp'}}
+- Segmentation/val/_annotations_be_rle.coco.json
+  type=dict len=3
+  first keys: ['images', 'annotations', 'categories']
+  COCO: 140 images, 606 annots, categories=['bone-erosion', 'Non-SvdH-BE', 'SvdH-BE-50', 'SvdH-BE-90']
+  first image entry: {'id': 15, 'license': 1, 'file_name': 'JP_HMCRD_P0089_20201201_6455_L.bmp', 'height': 1431, 'width': 864, 'date_captured': '2026-03-27T15:04:11+00:00', 'extra': {'name': 'JP_HMCRD_P0089_20201201_6455_L.bmp'}}
+- Segmentation/val/_annotations_bone_rle.coco.json
+  type=dict len=3
+  first keys: ['images', 'annotations', 'categories']
+  COCO: 140 images, 4303 annots, categories=['bone-6U7D-RuyD', 'Capitate', 'DP1', 'DP2', 'DP3', 'DP4', 'DP5', 'Hamate', 'Intravenous cannula', 'Lunate', 'MC1', 'MC2', 'MC3', 'MC4', 'MC5', 'MP2', 'MP3', 'MP4', 'MP5', 'Metal Implant', 'PP1', 'PP2', 'PP3', 'PP4', 'PP5', 'Pisifrom_Triquetrum', 'Radius', 'Ring', 'Scaphoid', 'Sesamoid', 'SoftTissue', 'Trapezium', 'Trapezoid', 'Ulna']
+  first image entry: {'id': 8, 'license': 1, 'file_name': 'JP_SARC_P0001_20100423_7383_R.bmp', 'height': 1700, 'width': 1300, 'date_captured': '2026-03-27T09:44:25+00:00', 'extra': {'name': 'JP_SARC_P0001_20100423_7383_R.bmp'}}
+- SvdH_Scoring/SvdH_BE_Scoring/test/_annotation_be_scores.json
+  type=dict len=267
+  first keys: ['JP_HMCRD_P0050_20210728_6217_L.bmp', 'JP_HMCRD_P0050_20210728_6217_R.bmp', 'JP_HMCRD_P0054_20220131_6753_L.bmp']
+  first value: {"BE_MCP-T": 1, "BE_MCP-I": 0, "BE_MCP-M": 0, "BE_MCP-R": 0, "BE_MCP-S": 0, "BE_IP": 0, "BE_PIP-I": 0, "BE_PIP-M": 0, "BE_PIP-R": 0, "BE_PIP-S": 1, "BE_CMC-T": 0, "BE_Tm": 0, "BE_S": 0, "BE_L": 0, "BE_U": 0, "BE_R": 0}
+  score distribution (all keys pooled): {0: 3118, 1: 717, 2: 351, 3: 25, 5: 61}
+  hands with any score >= 1: 255/267
+- SvdH_Scoring/SvdH_BE_Scoring/test/_annotations_be_joint_detection.coco.json
+  type=dict len=3
+  first keys: ['images', 'annotations', 'categories']
+  COCO: 267 images, 4272 annots, categories=['R', 'U', 'L', 'CMC-T', 'S', 'Tm', 'DIP-S', 'PIP-S', 'MCP-S', 'DIP-R', 'PIP-R', 'MCP-R', 'DIP-M', 'PIP-M', 'MCP-M', 'DIP-I', 'PIP-I', 'MCP-I', 'IP', 'MCP-T']
+  first image entry: {'id': 0, 'license': 1, 'file_name': 'JP_HMCRD_P0053_20211227_0654_R.bmp', 'height': 1431, 'width': 858, 'date_captured': '2026-03-25T14:27:21+00:00', 'extra': {'name': 'JP_HMCRD_P0053_20211227_0654_R.bmp', 'carpal_roi': [404.0, 1052.0, 512.0, 512.0]}}
+- SvdH_Scoring/SvdH_BE_Scoring/train/_annotation_be_scores.json
+  type=dict len=793
+  first keys: ['JP_HMCRD_P0167_20111230_3497_L.bmp', 'JP_HMCRD_P0167_20111230_3497_R.bmp', 'JP_HMCRD_P0167_20160814_8353_L.bmp']
+  first value: {"BE_MCP-T": 0, "BE_MCP-I": 1, "BE_MCP-M": 0, "BE_MCP-R": 0, "BE_MCP-S": 0, "BE_IP": 0, "BE_PIP-I": 0, "BE_PIP-M": 0, "BE_PIP-R": 1, "BE_PIP-S": 1, "BE_CMC-T": 0, "BE_Tm": 1, "BE_S": 0, "BE_L": 0, "BE_U": 0, "BE_R": 0}
+  score distribution (all keys pooled): {0: 10045, 1: 1869, 2: 536, 3: 73, 5: 165}
+  hands with any score >= 1: 647/793
+- SvdH_Scoring/SvdH_BE_Scoring/train/_annotations_be_joint_detection.coco.json
+  type=dict len=3
+  first keys: ['images', 'annotations', 'categories']
+  COCO: 793 images, 12688 annots, categories=['R', 'U', 'L', 'CMC-T', 'S', 'Tm', 'DIP-S', 'PIP-S', 'MCP-S', 'DIP-R', 'PIP-R', 'MCP-R', 'DIP-M', 'PIP-M', 'MCP-M', 'DIP-I', 'PIP-I', 'MCP-I', 'IP', 'MCP-T']
+  first image entry: {'id': 1, 'license': 1, 'file_name': 'JP_HMCRD_P0216_20170517_9554_R.bmp', 'height': 1431, 'width': 861, 'date_captured': '2026-03-25T14:27:21+00:00', 'extra': {'name': 'JP_HMCRD_P0216_20170517_9554_R.bmp', 'carpal_roi': [340.0, 1023.0, 512.0, 512.0]}}
+- SvdH_Scoring/SvdH_BE_Scoring/val/_annotation_be_scores.json
+  type=dict len=140
+  first keys: ['JP_HMCRD_P0100_20210313_8644_L.bmp', 'JP_HMCRD_P0087_20211121_2736_L.bmp', 'JP_HMCRD_P0091_20200317_3650_L.bmp']
+  first value: {"BE_MCP-T": 0, "BE_MCP-I": 0, "BE_MCP-M": 0, "BE_MCP-R": 0, "BE_MCP-S": 0, "BE_IP": 1, "BE_PIP-I": 1, "BE_PIP-M": 1, "BE_PIP-R": 0, "BE_PIP-S": 0, "BE_CMC-T": 0, "BE_Tm": 0, "BE_S": 1, "BE_L": 0, "BE_U": 0, "BE_R": 0}
+  score distribution (all keys pooled): {0: 1716, 1: 390, 2: 99, 3: 10, 5: 25}
+  hands with any score >= 1: 128/140
+- SvdH_Scoring/SvdH_BE_Scoring/val/_annotations_be_joint_detection.coco.json
+  type=dict len=3
+  first keys: ['images', 'annotations', 'categories']
+  COCO: 140 images, 2240 annots, categories=['R', 'U', 'L', 'CMC-T', 'S', 'Tm', 'DIP-S', 'PIP-S', 'MCP-S', 'DIP-R', 'PIP-R', 'MCP-R', 'DIP-M', 'PIP-M', 'MCP-M', 'DIP-I', 'PIP-I', 'MCP-I', 'IP', 'MCP-T']
+  first image entry: {'id': 8, 'license': 1, 'file_name': 'JP_HMCRD_P0178_20171001_5121_R.bmp', 'height': 1431, 'width': 831, 'date_captured': '2026-03-25T14:27:21+00:00', 'extra': {'name': 'JP_HMCRD_P0178_20171001_5121_R.bmp', 'carpal_roi': [331.0, 936.0, 512.0, 512.0]}}
+- SvdH_Scoring/SvdH_JSN_Scoring/test/_annotation_jsn_scores.json
+  type=dict len=267
+  first keys: ['JP_HMCRD_P0050_20210728_6217_L.bmp', 'JP_HMCRD_P0050_20210728_6217_R.bmp', 'JP_HMCRD_P0054_20220131_6753_L.bmp']
+  first value: {"JSN_MCP-T": 0, "JSN_MCP-I": 0, "JSN_MCP-M": 0, "JSN_MCP-R": 0, "JSN_MCP-S": 0, "JSN_PIP-I": 0, "JSN_PIP-M": 2, "JSN_PIP-R": 1, "JSN_PIP-S": 1, "JSN_STT": 0, "JSN_SC": 0, "JSN_SR": 0, "JSN_CMC-M": 0, "JSN_CMC-R": 1, "JSN_CMC-S": 0}
+  score distribution (all keys pooled): {0: 3122, 1: 584, 2: 192, 3: 64, 4: 43}
+  hands with any score >= 1: 222/267
+- SvdH_Scoring/SvdH_JSN_Scoring/test/_annotations_jsn_joint_detection.coco.json
+  type=dict len=3
+  first keys: ['images', 'annotations', 'categories']
+  COCO: 267 images, 4005 annots, categories=['FullHandCarpalJSNDetection', 'CMC-M', 'CMC-R', 'CMC-S', 'SC', 'SR', 'STT', 'MCP-T', 'MCP-I', 'MCP-M', 'MCP-R', 'MCP-S', 'PIP-I', 'PIP-M', 'PIP-R', 'PIP-S']
+  first image entry: {'id': 10, 'license': 1, 'file_name': 'JP_HMCRD_P0118_20200809_4320_L.bmp', 'height': 1431, 'width': 865, 'date_captured': '2026-04-07T15:58:42+00:00', 'extra': {'name': 'JP_HMCRD_P0118_20200809_4320_L.bmp'}}
+- SvdH_Scoring/SvdH_JSN_Scoring/train/_annotation_jsn_scores.json
+  type=dict len=793
+  first keys: ['JP_HMCRD_P0167_20111230_3497_L.bmp', 'JP_HMCRD_P0167_20111230_3497_R.bmp', 'JP_HMCRD_P0167_20160814_8353_L.bmp']
+  first value: {"JSN_MCP-T": 2, "JSN_MCP-I": 0, "JSN_MCP-M": 0, "JSN_MCP-R": 0, "JSN_MCP-S": 0, "JSN_PIP-I": 0, "JSN_PIP-M": 0, "JSN_PIP-R": 0, "JSN_PIP-S": 0, "JSN_STT": 0, "JSN_SC": 0, "JSN_SR": 0, "JSN_CMC-M": 0, "JSN_CMC-R": 0, "JSN_CMC-S": 0}
+  score distribution (all keys pooled): {0: 9162, 1: 1808, 2: 609, 3: 164, 4: 152}
+  hands with any score >= 1: 625/793
+- SvdH_Scoring/SvdH_JSN_Scoring/train/_annotations_jsn_joint_detection.coco.json
+  type=dict len=3
+  first keys: ['images', 'annotations', 'categories']
+  COCO: 793 images, 11895 annots, categories=['FullHandCarpalJSNDetection', 'CMC-M', 'CMC-R', 'CMC-S', 'SC', 'SR', 'STT', 'MCP-T', 'MCP-I', 'MCP-M', 'MCP-R', 'MCP-S', 'PIP-I', 'PIP-M', 'PIP-R', 'PIP-S']
+  first image entry: {'id': 0, 'license': 1, 'file_name': 'JP_HMCRD_P0188_20210511_6255_R.bmp', 'height': 1431, 'width': 858, 'date_captured': '2026-04-07T15:58:42+00:00', 'extra': {'name': 'JP_HMCRD_P0188_20210511_6255_R.bmp'}}
+- SvdH_Scoring/SvdH_JSN_Scoring/val/_annotation_jsn_scores.json
+  type=dict len=140
+  first keys: ['JP_HMCRD_P0100_20210313_8644_L.bmp', 'JP_HMCRD_P0087_20211121_2736_L.bmp', 'JP_HMCRD_P0091_20200317_3650_L.bmp']
+  first value: {"JSN_MCP-T": 1, "JSN_MCP-I": 0, "JSN_MCP-M": 0, "JSN_MCP-R": 0, "JSN_MCP-S": 0, "JSN_PIP-I": 0, "JSN_PIP-M": 0, "JSN_PIP-R": 0, "JSN_PIP-S": 1, "JSN_STT": 1, "JSN_SC": 2, "JSN_SR": 0, "JSN_CMC-M": 0, "JSN_CMC-R": 1, "JSN_CMC-S": 0}
+  score distribution (all keys pooled): {0: 1629, 1: 331, 2: 102, 3: 33, 4: 5}
+  hands with any score >= 1: 123/140
+- SvdH_Scoring/SvdH_JSN_Scoring/val/_annotations_jsn_joint_detection.coco.json
+  type=dict len=3
+  first keys: ['images', 'annotations', 'categories']
+  COCO: 140 images, 2100 annots, categories=['FullHandCarpalJSNDetection', 'CMC-M', 'CMC-R', 'CMC-S', 'SC', 'SR', 'STT', 'MCP-T', 'MCP-I', 'MCP-M', 'MCP-R', 'MCP-S', 'PIP-I', 'PIP-M', 'PIP-R', 'PIP-S']
+  first image entry: {'id': 14, 'license': 1, 'file_name': 'JP_HMCRD_P0100_20210313_8644_L.bmp', 'height': 1431, 'width': 891, 'date_captured': '2026-04-07T15:58:42+00:00', 'extra': {'name': 'JP_HMCRD_P0100_20210313_8644_L.bmp'}}
+
+## Spreadsheets
+- Metadata.xlsx
+  shape=(836, 10)
+  columns=['Mapped Image Stem', 'StudyID', 'Normalized PatientID', 'isRA', 'Sex', 'Age', 'Center', 'PixelSpacing', 'ImageSize', 'LR']
+  head:
+                  Mapped Image Stem  StudyID  Normalized PatientID  isRA Sex   Age Center  PixelSpacing  ImageSize  LR
+    0  JP_HMCRD_P0001_20210203_6791        1                     1     0   F  60.0  HMCRD  [0.15, 0.15]  1670x2010  LR
+    1  JP_HMCRD_P0002_20230413_2984        1                     2     0   F  59.6  HMCRD  [0.15, 0.15]  1670x2010  LR
+    2  JP_HMCRD_P0003_20111111_9725        1                     3     0   F  54.0  HMCRD  [0.15, 0.15]  1670x2010  LR
+  Mapped Image Stem: 836 unique values
+  StudyID: 38 unique values
+  Normalized PatientID: 220 unique values
+  isRA: {1: 786, 0: 50}
+  Sex: {'F': 746, 'M': 78, 'O': 12}
+  Age: 409 unique values
+  Center: {'SARC': 387, 'HMCRD': 358, 'SCGH': 76, 'HU2': 12, 'HU1': 2, 'HU3': 1}
+  PixelSpacing: {'[0.15, 0.15]': 446, '[0.175, 0.175]': 387, '[0.10, 0.10]': 3}
+  ImageSize: {'[1670, 2010]': 396, '[1722, 1430]': 385, '1670x2010': 50, '[3015, 2505]': 3, '[1722, 1190]': 2}
+  LR: {'LR': 422, 'R': 209, 'L': 205}
