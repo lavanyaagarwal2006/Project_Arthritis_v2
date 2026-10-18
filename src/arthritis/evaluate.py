@@ -65,6 +65,22 @@ def evaluate(df: pd.DataFrame, n_boot: int = 2000, target_sens: float = 0.90, ec
     res["per_fold_auroc"] = {"folds": per, "mean": float(vals.mean()) if len(vals) else None,
                              "sd": float(vals.std(ddof=1)) if len(vals) > 1 else None}
 
+    # Grade agreement (ordinal head only): the metric the RAM-H1200 benchmark reports (its best erosion QWK
+    # is 0.4522 on the official test split). Ours is out-of-fold on train+val, so it is comparable in kind,
+    # not a same-split comparison. Note: balanced sampling shifts predicted grades upward.
+    if {"grade_idx", "grade_pred_idx"} <= set(df.columns):
+        from sklearn.metrics import balanced_accuracy_score, cohen_kappa_score
+        qwk = lambda a, b: cohen_kappa_score(a, b, weights="quadratic")  # noqa: E731
+        res["grade"] = {
+            "qwk": M.cluster_bootstrap(df.grade_idx.values, df.grade_pred_idx.values, g, qwk, n_boot, seed),
+            "balanced_accuracy": float(balanced_accuracy_score(df.grade_idx, df.grade_pred_idx)),
+            "confusion": pd.crosstab(df.grade_idx, df.grade_pred_idx).to_dict(),
+            "benchmark_note": "RAM-H1200 paper, erosion scoring on official test: best QWK 0.4522 (MedMamba), best BACC 35.87% (ResNet)",
+        }
+
+    # Per-joint AUROC (wrist joints are the weakest in every published study)
+    res["per_joint_auroc"] = {str(jn): M.auroc(d.label, d.prob) for jn, d in df.groupby("joint")}
+
     # Per-center (meaningful for leave-one-center-out runs)
     res["per_center_auroc"] = {str(c): M.auroc(d.label, d.prob) for c, d in df.groupby("center")}
 
@@ -123,6 +139,7 @@ def append_summary(run_dir: Path, res: dict, meta: dict) -> None:
            "joint_sens@90spec": fmt(j["sens_at_90spec"]),
            "minimal_vs_none_auroc": fmt(res["joint_minimal_erosion_vs_none"]["auroc"]) if "joint_minimal_erosion_vs_none" in res else "",
            "hand_auroc": fmt(h["auroc"]) if "auroc" in h else "",
+           "grade_qwk": fmt(res["grade"]["qwk"]) if "grade" in res else "",
            "ece_raw": f"{res['calibration']['ece_raw']:.3f}",
            "ece_temp": f"{res['calibration']['ece_temperature_scaled']:.3f}",
            "ece_platt": f"{res['calibration']['ece_platt']:.3f}"}
@@ -165,6 +182,14 @@ def main() -> None:
     if "auroc" in res.get("hand_any_erosion", {}):
         h = res["hand_any_erosion"]["auroc"]
         print(f"   hand-level any erosion: AUROC {h['value']:.3f} ({h['ci_low']:.3f}–{h['ci_high']:.3f})")
+    if "grade" in res:
+        q = res["grade"]["qwk"]
+        print(f"   grade agreement: QWK {q['value']:.3f} ({q['ci_low']:.3f}–{q['ci_high']:.3f}), "
+              f"balanced acc {res['grade']['balanced_accuracy']:.1%}  [RAM-H1200 benchmark best: QWK 0.452, BACC 35.9%]")
+    pj = {k: v for k, v in res["per_joint_auroc"].items() if np.isfinite(v)}
+    if pj:
+        lo = sorted(pj.items(), key=lambda kv: kv[1])[:3]
+        print("   weakest joints: " + ", ".join(f"{k} {v:.3f}" for k, v in lo))
     if "paired_auroc_diff_vs" in res:
         d = res["paired_auroc_diff_vs"]
         print(f"   ΔAUROC vs {d['other']}: {d['value']:+.3f} ({d['ci_low']:+.3f} to {d['ci_high']:+.3f})")

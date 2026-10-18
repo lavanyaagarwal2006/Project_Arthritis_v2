@@ -1,0 +1,16 @@
+# v2 recipe: same backbone as densenet121.yaml, three changes from the research doc (Methods 1, 2, 5):
+#   native pixel scale on a fixed canvas (no downsampling of small erosions; 1 px = same mm for every joint)
+#   ordinal head over SvdH grades 0/1/2/3/5 (P(erosion) = P(grade >= 1); grades add supervision)
+#   joint-identity embedding + left hands mirrored to right-hand orientation
+# Each piece is a switch, so the ablations below isolate what helped.
+model:
+  name: densenet121.tv_in1k
+  pretrained: true
+  head: ordinal
+  joint_embedding: 16
+train:
+  input_mode: native
+  canvas: 320          # replace with the value `make crop-stats` recommends
+  mirror_left: true
+  batch_size: 32
+  lr: 1.0e-4

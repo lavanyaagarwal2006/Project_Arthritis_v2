@@ -26,3 +26,20 @@ def letterbox(a: np.ndarray) -> np.ndarray:
     out = np.zeros((s, s), dtype=a.dtype)
     out[(s - h) // 2:(s - h) // 2 + h, (s - w) // 2:(s - w) // 2 + w] = a
     return out
+
+
+def fit_canvas(a: np.ndarray, canvas: int) -> tuple[np.ndarray, bool]:
+    """Place a crop on a canvas x canvas square WITHOUT rescaling, so 1 px means the same distance for
+    every joint and every center (RAM-H1200 images are resampled to 0.175 mm/px). A crop larger than the
+    canvas is shrunk to fit (returned flag = True) — `make crop-stats` picks a canvas where this is rare."""
+    h, w = a.shape
+    shrunk = max(h, w) > canvas
+    if shrunk:
+        s = canvas / max(h, w)
+        nh, nw = max(1, round(h * s)), max(1, round(w * s))
+        a = np.asarray(Image.fromarray(a).resize((nw, nh), Image.BILINEAR), dtype=np.float32)
+        h, w = a.shape
+    out = np.zeros((canvas, canvas), dtype=np.float32)
+    y0, x0 = (canvas - h) // 2, (canvas - w) // 2
+    out[y0:y0 + h, x0:x0 + w] = a
+    return out, shrunk

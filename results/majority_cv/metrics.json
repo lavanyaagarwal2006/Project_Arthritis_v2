@@ -1,0 +1,194 @@
+{
+  "cohort": {
+    "patients": 190,
+    "hands": 933,
+    "joints": 14928,
+    "joint_prevalence": 0.21215166130760987
+  },
+  "joint": {
+    "n": 14928,
+    "n_pos": 3167,
+    "n_patients": 190,
+    "auroc": {
+      "value": 0.49511757791958333,
+      "ci_low": 0.45632440380659767,
+      "ci_high": 0.532037737939936,
+      "n_boot": 2000
+    },
+    "auprc": {
+      "value": 0.21001068197016723,
+      "ci_low": 0.18446004142594116,
+      "ci_high": 0.238463710116733,
+      "n_boot": 2000
+    },
+    "sens_at_90spec": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n_boot": 2000
+    },
+    "spec_at_90sens": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n_boot": 2000
+    },
+    "ece": 2.5932564229058652e-06,
+    "at_threshold": {
+      "threshold": 0.2111780455153949,
+      "tp": 3167,
+      "fp": 11761,
+      "tn": 0,
+      "fn": 0,
+      "sensitivity": 1.0,
+      "specificity": 0.0,
+      "ppv": 0.21215166130760987,
+      "npv": NaN,
+      "f1": 0.35004144791378833
+    },
+    "threshold_note": "threshold chosen on these same OOF predictions for 90% sensitivity; the operating point is optimistic until it is applied to the sealed test set"
+  },
+  "joint_minimal_erosion_vs_none": {
+    "n": 14020,
+    "n_pos": 2259,
+    "n_patients": 190,
+    "auroc": {
+      "value": 0.497119590679032,
+      "ci_low": 0.4612643796460527,
+      "ci_high": 0.5321106300082902,
+      "n_boot": 2000
+    },
+    "auprc": {
+      "value": 0.16134699719107776,
+      "ci_low": 0.14242966196338294,
+      "ci_high": 0.18096036571732413,
+      "n_boot": 2000
+    },
+    "sens_at_90spec": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n_boot": 2000
+    },
+    "spec_at_90sens": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n_boot": 2000
+    },
+    "ece": 0.051025162622514775,
+    "at_threshold": {
+      "threshold": 0.2111780455153949,
+      "tp": 2259,
+      "fp": 11761,
+      "tn": 0,
+      "fn": 0,
+      "sensitivity": 1.0,
+      "specificity": 0.0,
+      "ppv": 0.16112696148359487,
+      "npv": NaN,
+      "f1": 0.27753547515203636
+    }
+  },
+  "hand_any_erosion": {
+    "n": 933,
+    "n_pos": 775,
+    "n_patients": 190,
+    "auroc": {
+      "value": 0.47477337688852594,
+      "ci_low": 0.39764109905721007,
+      "ci_high": 0.5495007623332608,
+      "n_boot": 2000
+    },
+    "auprc": {
+      "value": 0.8229590510655534,
+      "ci_low": 0.7707092968454887,
+      "ci_high": 0.8678401203376258,
+      "n_boot": 2000
+    },
+    "sens_at_90spec": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n_boot": 2000
+    },
+    "spec_at_90sens": {
+      "value": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n_boot": 2000
+    },
+    "ece": 0.6185047368791452,
+    "at_threshold": {
+      "threshold": 0.2111780455153949,
+      "tp": 775,
+      "fp": 158,
+      "tn": 0,
+      "fn": 0,
+      "sensitivity": 1.0,
+      "specificity": 0.0,
+      "ppv": 0.8306538049303323,
+      "npv": NaN,
+      "f1": 0.9074941451990632
+    }
+  },
+  "per_fold_auroc": {
+    "folds": {
+      "0": 0.5,
+      "1": 0.5,
+      "2": 0.5,
+      "3": 0.5,
+      "4": 0.5
+    },
+    "mean": 0.5,
+    "sd": 0.0
+  },
+  "per_center_auroc": {
+    "HMCRD": 0.5062454627739317,
+    "HU1": 0.7580645161290323,
+    "HU2": 0.5484848484848486,
+    "HU3": NaN,
+    "SARC": 0.4585241987859867,
+    "SCGH": 0.565821688147545
+  },
+  "calibration": {
+    "ece_raw": 2.5932564229058652e-06,
+    "ece_temperature_scaled": 7.806281691530303e-06,
+    "ece_platt": 3.9542289515775986e-05,
+    "note": "both recalibrators are cross-fitted across folds; Platt also corrects the prevalence shift from balanced sampling",
+    "temperature_all_oof": 1.0000699501242643,
+    "platt_all_oof": [
+      0.6325908792705187,
+      -0.48224493628739423
+    ],
+    "per_fold_temperature": [
+      0.9994934365297621,
+      0.9977622183790168,
+      1.0071801116359533,
+      0.9945282158107811,
+      1.0014042886940577
+    ],
+    "per_fold_platt": [
+      [
+        0.6328934355354342,
+        -0.4825546871621455
+      ],
+      [
+        0.6338295120028992,
+        -0.48342893308222906
+      ],
+      [
+        0.6288058984607487,
+        -0.4786223293574646
+      ],
+      [
+        0.6356026048191837,
+        -0.4850479072972424
+      ],
+      [
+        0.631866697105279,
+        -0.48158500708738927
+      ]
+    ]
+  }
+}

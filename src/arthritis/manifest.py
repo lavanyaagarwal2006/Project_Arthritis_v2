@@ -238,10 +238,15 @@ def summarize(df: pd.DataFrame) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--exp", default=None)
+    ap.add_argument("--score-type", default=None, choices=["BE", "JSN"],
+                    help="JSN writes data.jsn_manifest (auxiliary task for multi-task training)")
     args = ap.parse_args()
     cfg = load_config(args.exp)
+    if args.score_type:
+        cfg["data"]["score_type"] = args.score_type
     df = build_manifest(cfg)
-    out = resolve(cfg["data"]["manifest"])
+    key = "jsn_manifest" if cfg["data"]["score_type"].upper() == "JSN" else "manifest"
+    out = resolve(cfg["data"][key])
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out, index=False)
     print(summarize(df))

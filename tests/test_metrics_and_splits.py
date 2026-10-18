@@ -102,3 +102,27 @@ def test_same_patient_number_in_two_centers_is_two_patients(tmp_path):
                     "patient_key": "auto"}}
     out = _join_metadata(tmp_path, df, cfg)
     assert out.patient_id.nunique() == 2
+
+
+def test_ordinal_levels_targets_and_class_probs():
+    from arthritis.ordinal import class_probs, level_index, threshold_targets
+    assert list(level_index([0, 1, 2, 3, 5], [0, 1, 2, 3, 5])) == [0, 1, 2, 3, 4]
+    t = threshold_targets([0, 1, 4], 4)
+    assert t[:, 0].tolist() == [0, 1, 1]          # threshold 0 == erosion present
+    cp = class_probs(np.array([[0.9, 0.95, 0.2, 0.1]]))  # non-monotone input is repaired
+    assert np.isclose(cp.sum(), 1) and (cp >= 0).all() and np.isclose(cp[0, 0], 0.1)
+
+
+def test_fit_canvas_keeps_native_scale():
+    from arthritis.imaging import fit_canvas
+    a, shrunk = fit_canvas(np.ones((100, 60), np.float32), 128)
+    assert a.shape == (128, 128) and not shrunk and a.sum() == 6000   # same pixels, no rescale
+    _, shrunk = fit_canvas(np.ones((300, 60), np.float32), 128)
+    assert shrunk
+
+
+def test_joint_prior_uses_training_rates_only():
+    from arthritis.train import run_joint_prior
+    tr = pd.DataFrame({"joint": ["A", "A", "B", "B"], "label": [1, 1, 0, 1]})
+    te = pd.DataFrame({"joint": ["A", "B", "C"]})
+    assert np.allclose(run_joint_prior(tr, te), [1.0, 0.5, 0.75])

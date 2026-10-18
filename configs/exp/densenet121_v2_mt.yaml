@@ -1,0 +1,13 @@
+# v2 + joint-space-narrowing as an auxiliary task (Methods 3). Needs `make manifest-jsn`. ~1.5x training time.
+model:
+  name: densenet121.tv_in1k
+  pretrained: true
+  head: ordinal
+  joint_embedding: 16
+train:
+  input_mode: native
+  canvas: 320
+  mirror_left: true
+  multitask_jsn: true
+  batch_size: 32
+  lr: 1.0e-4

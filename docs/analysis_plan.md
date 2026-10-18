@@ -152,3 +152,27 @@ dataset was inspected with `make inspect`, and the plan was adjusted as follows.
   scale is planned (Methods #1).
 - **Subgroups to report.** Sex (F 746 / M 78 / O 12 studies), age band, hand side, and follow-up
   visit vs first visit (StudyID).
+
+**A2 (2026-10-16, after the majority and pixel-logistic baselines, before any deep model).**
+Endpoints, splits, metrics and the sealed test set are unchanged. Changes:
+
+- **New baseline rung, `joint_prior`.** It predicts each joint's training erosion rate and nothing
+  else. Joints differ in how often they erode, so knowing *which* joint is in the crop already
+  gives above-chance AUROC. Every image model is reported against this floor, and so is the v2
+  joint-identity embedding.
+- **Pixel spacing (correcting A1).** A1 treated the different 0.15 and 0.175 mm/px spacings as a
+  possible shortcut. The released images appear to be already resampled to 0.175 mm/px, as the
+  paper states: HMCRD originals of 1670 px at 0.15 mm become 1431 px, which matches 0.175 mm.
+  `make crop-stats` verifies this. It compares the median crop size of each joint across centers
+  and flags any center that is more than 15% off.
+- **Pre-specified v2 ladder.** Each rung is compared with the one before it by paired
+  patient-bootstrap ΔAUROC (Section 7), using cross-validated out-of-fold predictions only.
+  1. `densenet121`: v1, crops resized to 224 px.
+  2. `densenet121_native`: native pixel scale on a fixed canvas.
+  3. `densenet121_v2`: adds the ordinal head over SvdH grades, a joint-identity embedding, and
+     mirroring left hands to right-hand orientation.
+  4. `densenet121_v2_mt`: adds joint-space narrowing as an auxiliary task. JSN crops come only
+     from each fold's training patients.
+  The primary endpoint is still P(erosion) = P(grade ≥ 1). The ordinal head additionally reports
+  grade QWK, so results can be compared with the RAM-H1200 benchmark. That comparison is like for
+  like in kind only, not on the same split.

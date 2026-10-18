@@ -1,0 +1,17 @@
+# Synthetic data, v2 code path. Numbers from this mean nothing.
+data:
+  root: data/synthetic
+  manifest: splits/synthetic_manifest.csv
+  jsn_manifest: splits/synthetic_jsn_manifest.csv
+  folds: splits/synthetic_folds.csv
+model:
+  name: resnet18          # tiny timm model, random init (no download): exercises the JointNet path
+  pretrained: false
+  head: ordinal
+  joint_embedding: 8
+train:
+  input_mode: native
+  canvas: 80
+  mirror_left: true
+  multitask_jsn: true
+  batch_size: 16

@@ -1,0 +1,9 @@
+# Ablation: v1 + native scale only (binary head, no joint embedding). Isolates Methods 1.
+model:
+  name: densenet121.tv_in1k
+  pretrained: true
+train:
+  input_mode: native
+  canvas: 320
+  batch_size: 32
+  lr: 1.0e-4

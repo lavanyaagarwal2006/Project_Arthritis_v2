@@ -1,0 +1,60 @@
+{
+  "exp_name": "densenet121",
+  "scheme": "cv",
+  "git_sha": "9027e81-dirty",
+  "smoke": false,
+  "started": "2026-10-17T11:03:36",
+  "config": {
+    "seed": 2026,
+    "data": {
+      "root": "data/RAM-H1200-v1",
+      "manifest": "splits/joints_manifest.csv",
+      "folds": "splits/folds.csv",
+      "score_type": "BE",
+      "positive_threshold": 1,
+      "metadata_file": "auto",
+      "metadata_image_col": "auto",
+      "metadata_patient_col": "auto",
+      "metadata_center_col": "auto",
+      "metadata_isra_col": "auto",
+      "patient_key": "auto",
+      "loco_min_hands": 50,
+      "sealed_split": "test"
+    },
+    "cv": {
+      "n_folds": 5
+    },
+    "train": {
+      "image_size": 224,
+      "batch_size": 64,
+      "epochs": 40,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "warmup_epochs": 2,
+      "early_stop_patience": 8,
+      "balanced_sampling": true,
+      "num_workers": 4,
+      "amp": true,
+      "augment": {
+        "rotate_deg": 10,
+        "scale": [
+          0.85,
+          1.0
+        ],
+        "brightness": 0.15,
+        "contrast": 0.15,
+        "hflip": false
+      }
+    },
+    "eval": {
+      "n_bootstrap": 2000,
+      "target_sensitivity": 0.9,
+      "ece_bins": 15
+    },
+    "model": {
+      "name": "densenet121.tv_in1k",
+      "pretrained": true
+    },
+    "exp_name": "densenet121"
+  }
+}

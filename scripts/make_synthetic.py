@@ -18,6 +18,8 @@ from PIL import Image
 
 JOINTS = ["R", "U", "IP", "L", "MCP-T", "MCP-I", "MCP-M", "MCP-R", "MCP-S", "CMC-T",
           "PIP-I", "PIP-M", "PIP-R", "PIP-S", "S", "Tm"]
+JSN_JOINTS = ["MCP-T", "MCP-I", "MCP-M", "MCP-R", "MCP-S", "PIP-I", "PIP-M", "PIP-R", "PIP-S",
+              "CMC-M", "CMC-R", "CMC-S", "SC", "SR", "STT"]
 
 
 def joint_image(rng, score: int, size: int = 72) -> np.ndarray:
@@ -44,8 +46,10 @@ def main() -> None:
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
     base = args.out / "SvdH_Scoring" / "SvdH_BE_Scoring"
+    jbase = args.out / "SvdH_Scoring" / "SvdH_JSN_Scoring"
     meta = []
     splits = {"train": {}, "val": {}, "test": {}}
+    jsplits = {"train": {}, "val": {}, "test": {}}
     centers = ["HMCRD", "SARC", "SCGH", "HU2"]
     per_center_counter = {c: 0 for c in centers}
     for pi in range(args.patients):
@@ -67,12 +71,22 @@ def main() -> None:
                     scores[f"BE_{j}"] = s
                     Image.fromarray(joint_image(rng, min(s, 3))).save(d / f"{j}.bmp")
                 splits[split][f"{case}.bmp"] = scores
+                jd = jbase / split / case
+                jd.mkdir(parents=True, exist_ok=True)
+                jscores = {}
+                for j in JSN_JOINTS:
+                    s = int(rng.choice([1, 2, 3, 4])) if rng.random() < severity else 0
+                    jscores[f"JSN_{j}"] = s
+                    Image.fromarray(joint_image(rng, min(s, 3), size=60)).save(jd / f"{j}.bmp")
+                jsplits[split][f"{case}.bmp"] = jscores
             meta.append({"Mapped Image Stem": stem, "StudyID": v + 1, "Normalized PatientID": num, "isRA": is_ra,
                          "Sex": "F", "Age": 55.0, "Center": center, "PixelSpacing": "[0.175, 0.175]",
                          "ImageSize": "[1722, 1430]", "LR": "LR"})
     for s, rec in splits.items():
         (base / s).mkdir(parents=True, exist_ok=True)
         (base / s / "_annotation_be_scores.json").write_text(json.dumps(rec))
+        (jbase / s).mkdir(parents=True, exist_ok=True)
+        (jbase / s / "_annotation_jsn_scores.json").write_text(json.dumps(jsplits[s]))
     pd.DataFrame(meta).to_excel(args.out / "Metadata.xlsx", index=False)
     print(f"synthetic dataset: {args.patients} patients, {len(meta)} studies -> {args.out}")
 

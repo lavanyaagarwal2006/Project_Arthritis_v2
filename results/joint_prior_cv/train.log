@@ -1,0 +1,7 @@
+run joint_prior_cv: 14928 dev joints / 190 patients, git 9027e81-dirty
+  outer fold 0: train+val 154 pts, test 36 pts
+  outer fold 1: train+val 151 pts, test 39 pts
+  outer fold 2: train+val 152 pts, test 38 pts
+  outer fold 3: train+val 153 pts, test 37 pts
+  outer fold 4: train+val 150 pts, test 40 pts
+wrote /Users/lavanyaagarwal/projects/project-arthritis/results/joint_prior_cv/oof_predictions.csv; next: python -m arthritis.evaluate results/joint_prior_cv

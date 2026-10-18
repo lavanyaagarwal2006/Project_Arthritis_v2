@@ -14,6 +14,7 @@ Schemes:
 Usage:
   python -m arthritis.train --exp densenet121 [--scheme cv|loco] [--smoke]
   python -m arthritis.train --exp majority                # baseline, no torch needed
+  python -m arthritis.train --exp densenet121_v2          # native scale + ordinal head + joint embedding
 """
 from __future__ import annotations
 
@@ -64,6 +65,13 @@ def run_majority(train: pd.DataFrame, test: pd.DataFrame) -> np.ndarray:
     return np.full(len(test), train.label.mean())
 
 
+def run_joint_prior(train: pd.DataFrame, test: pd.DataFrame) -> np.ndarray:
+    """Predicts each joint's training erosion rate and nothing else: the floor an image model must beat,
+    since knowing WHICH joint it is already ranks joints by risk."""
+    rate = train.groupby("joint").label.mean()
+    return test.joint.map(rate).fillna(train.label.mean()).values
+
+
 def run_pixel_logreg(train: pd.DataFrame, test: pd.DataFrame, root: Path, size: int = 32) -> np.ndarray:
     """Classical rung: L2 logistic regression on 32x32 normalised pixels. Shows how much deep learning adds."""
     from PIL import Image
@@ -74,66 +82,101 @@ def run_pixel_logreg(train: pd.DataFrame, test: pd.DataFrame, root: Path, size: 
         return np.stack([np.asarray(Image.fromarray((letterbox(load_roi(root, r.img_path, getattr(r, "bbox", None))) * 255)
                                                     .astype(np.uint8)).resize((size, size)), np.float32).ravel() / 255
                          for r in df.itertuples()])
+    import warnings
     clf = LogisticRegressionCV(Cs=6, cv=3, max_iter=2000, scoring="roc_auc", class_weight="balanced")
-    clf.fit(feats(train), train.label.values)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", FutureWarning)
+        clf.fit(feats(train), train.label.values)
     return clf.predict_proba(feats(test))[:, 1]
 
 
 # ---------------------------------------------------------------- torch training
 def run_torch(cfg: dict, train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame, root: Path,
-              ckpt_path: Path, log) -> np.ndarray:
+              ckpt_path: Path, log, jsn_train: pd.DataFrame | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """Returns (P(erosion) per test row, [N, K+1] grade-class probabilities per test row)."""
     import torch
     from torch.utils.data import DataLoader
 
-    from .data import JointDataset, balanced_sampler, build_transforms
+    from .data import JointDataset, balanced_sampler, build_transforms, multitask_sampler, prepare_rows
     from .metrics import auroc
     from .models import build_model
+    from .ordinal import class_probs
 
     dev = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
     tcfg = cfg["train"]
-    model, ch, pretrained = build_model(cfg["model"])
+    model, ch, pretrained, k_be, k_jsn = build_model(cfg)
     model.to(dev)
+    log(f"    device {dev.upper()} | {sum(p.numel() for p in model.parameters()) / 1e6:.1f}M params | "
+        f"heads: erosion {k_be}{' + JSN ' + str(k_jsn) if k_jsn else ''}")
 
-    tr_ds = JointDataset(train, root, build_transforms(cfg, True, pretrained), ch)
-    ev_tf = build_transforms(cfg, False, pretrained)
+    lv = cfg["levels"]
+    tr = prepare_rows(train, "BE", lv["BE"])
+    va, te = prepare_rows(val, "BE", lv["BE"]), prepare_rows(test, "BE", lv["BE"])
+    multitask = k_jsn > 0 and jsn_train is not None and len(jsn_train)
+    if multitask:
+        tr = pd.concat([tr, prepare_rows(jsn_train, "JSN", lv["JSN"])], ignore_index=True)
     nw = tcfg["num_workers"]
-    sampler = balanced_sampler(train.label.values) if tcfg["balanced_sampling"] else None
+    dl_kw = dict(num_workers=nw, persistent_workers=nw > 0, pin_memory=dev == "cuda")
+    tr_ds = JointDataset(tr, root, build_transforms(cfg, True, pretrained), ch, cfg)
+    if multitask:
+        sampler = multitask_sampler(tr, tcfg["balanced_sampling"], tcfg["jsn_share"])
+    else:
+        sampler = balanced_sampler(tr.label.values) if tcfg["balanced_sampling"] else None
     tr_dl = DataLoader(tr_ds, batch_size=tcfg["batch_size"], sampler=sampler, shuffle=sampler is None,
-                       num_workers=nw, drop_last=True, pin_memory=dev == "cuda")
+                       drop_last=True, **dl_kw)
+    ev_tf = build_transforms(cfg, False, pretrained)
+    va_dl = DataLoader(JointDataset(va, root, ev_tf, ch, cfg), batch_size=tcfg["batch_size"] * 2, **dl_kw)
 
-    def predict(df):
-        dl = DataLoader(JointDataset(df, root, ev_tf, ch), batch_size=tcfg["batch_size"] * 2, num_workers=nw)
+    def predict(dl):
         model.eval(); out = []
         with torch.no_grad():
-            for x, _, _ in dl:
-                out.append(torch.sigmoid(model(x.to(dev)).float()).cpu().numpy())
-        return np.concatenate(out)
+            for x, _, _, j, _, _ in dl:
+                be, _ = model(x.to(dev), j.to(dev))
+                out.append(torch.sigmoid(be.float()).cpu().numpy())
+        return np.concatenate(out)  # [N, k_be] threshold probabilities
 
     opt = torch.optim.AdamW(model.parameters(), lr=tcfg["lr"], weight_decay=tcfg["weight_decay"])
     steps = max(1, len(tr_dl)) * tcfg["epochs"]
     warm = max(1, len(tr_dl)) * tcfg["warmup_epochs"]
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lambda s: (s + 1) / warm if s < warm else 0.5 * (1 + np.cos(np.pi * (s - warm) / max(1, steps - warm))))
-    # balanced sampling already equalises classes; otherwise weight positives
-    pos_w = None if sampler else torch.tensor((1 - train.label.mean()) / max(train.label.mean(), 1e-6), device=dev)
-    loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=pos_w)
+    # no balanced sampling and a binary head: weight positives instead
+    pos_w = None
+    if sampler is None and k_be == 1:
+        pos_w = torch.tensor([(1 - train.label.mean()) / max(train.label.mean(), 1e-6)], device=dev)
+    bce = torch.nn.BCEWithLogitsLoss(reduction="none")
+    thr_be = torch.arange(k_be, device=dev)
+    thr_jsn = torch.arange(max(k_jsn, 1), device=dev)
     use_amp = tcfg["amp"] and dev == "cuda"
     scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
 
+    def loss_fn(be_logit, jsn_logit, grade, task):
+        m_be = task == 0
+        tgt = (grade[:, None] > thr_be[None, :]).float()
+        l_be = bce(be_logit, tgt)
+        if pos_w is not None:
+            l_be = l_be * torch.where(tgt > 0, pos_w, torch.ones_like(tgt))
+        loss = l_be[m_be].mean() if m_be.any() else be_logit.sum() * 0
+        if jsn_logit is not None and (~m_be).any():
+            tj = (grade[:, None] > thr_jsn[None, :]).float()
+            loss = loss + tcfg["jsn_loss_weight"] * bce(jsn_logit, tj)[~m_be].mean()
+        return loss
+
     best, bad = -1.0, 0
     for ep in range(tcfg["epochs"]):
-        model.train(); t0 = time.time(); tot = 0.0
-        for x, y, _ in tr_dl:
-            x, y = x.to(dev), y.to(dev)
+        model.train(); t0 = time.time(); tot, n = 0.0, 0
+        for x, _, grade, j, task, _ in tr_dl:
+            x, grade, j, task = x.to(dev), grade.to(dev), j.to(dev), task.to(dev)
             with torch.autocast(device_type="cuda", enabled=use_amp):
-                loss = loss_fn(model(x).float(), y)
+                be, js = model(x, j)
+            loss = loss_fn(be.float(), None if js is None else js.float(), grade, task)
             opt.zero_grad(set_to_none=True)
             scaler.scale(loss).backward(); scaler.step(opt); scaler.update(); sched.step()
-            tot += loss.item() * len(y)
-        v_auc = auroc(val.label.values, predict(val))
+            tot += loss.item() * len(x); n += len(x)
+        v_auc = auroc(va.label.values, predict(va_dl)[:, 0])
         if not np.isfinite(v_auc):  # inner-val has one class (tiny smoke subsets): keep training, save last epoch
             v_auc = float(ep) * 1e-3
-        log(f"    epoch {ep:02d} loss {tot / max(1, len(tr_dl.dataset)):.4f} inner-val AUROC {v_auc:.4f} ({time.time() - t0:.0f}s)")
+        log(f"    epoch {ep:02d} loss {tot / max(1, n):.4f} inner-val AUROC {v_auc:.4f} ({time.time() - t0:.0f}s)")
         if v_auc > best + 1e-4:
             best, bad = v_auc, 0
             torch.save(model.state_dict(), ckpt_path)
@@ -143,7 +186,9 @@ def run_torch(cfg: dict, train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFr
                 log(f"    early stop at epoch {ep} (best inner-val AUROC {best:.4f})")
                 break
     model.load_state_dict(torch.load(ckpt_path, map_location=dev))
-    return predict(test)
+    te_dl = DataLoader(JointDataset(te, root, ev_tf, ch, cfg), batch_size=tcfg["batch_size"] * 2, **dl_kw)
+    p = predict(te_dl)
+    return p[:, 0], class_probs(p)
 
 
 def main() -> None:
@@ -168,6 +213,13 @@ def main() -> None:
     if args.smoke:
         keep = dev_df.patient_id.drop_duplicates().sample(frac=0.3, random_state=0)
         dev_df = dev_df[dev_df.patient_id.isin(keep)].reset_index(drop=True)
+    jsn_dev = None
+    if cfg["train"].get("multitask_jsn"):
+        jp = resolve(cfg["data"]["jsn_manifest"])
+        if not jp.exists():
+            raise SystemExit(f"{jp} missing: run `make manifest-jsn` first")
+        jsn = attach(pd.read_csv(jp, dtype={"patient_id": str}), folds)
+        jsn_dev = jsn[(jsn.role == "dev") & jsn.patient_id.isin(set(dev_df.patient_id))].reset_index(drop=True)
 
     run_name = args.run_name or f"{datetime.now():%Y%m%d-%H%M}_{cfg['exp_name']}_{args.scheme}{'_smoke' if args.smoke else ''}"
     run_dir = resolve("results") / run_name
@@ -185,6 +237,7 @@ def main() -> None:
     log(f"run {run_name}: {len(dev_df)} dev joints / {dev_df.patient_id.nunique()} patients, git {meta['git_sha']}")
 
     preds = np.full(len(dev_df), np.nan)
+    grade_probs: np.ndarray | None = None
     outer_id = np.empty(len(dev_df), dtype=object)
     for name, te_mask in outer_folds(dev_df, args.scheme, cfg["data"].get("loco_min_hands", 50)):
         tr_all, te = dev_df[~te_mask], dev_df[te_mask]
@@ -194,11 +247,20 @@ def main() -> None:
         log(f"  outer fold {name}: train+val {tr_all.patient_id.nunique()} pts, test {te.patient_id.nunique()} pts")
         if cfg["model"]["name"] == "majority":
             p = run_majority(tr_all, te)
+        elif cfg["model"]["name"] == "joint_prior":
+            p = run_joint_prior(tr_all, te)
         elif cfg["model"]["name"] == "pixel_logreg":
             p = run_pixel_logreg(tr_all, te, root)
         else:
             vmask = inner_split(tr_all, 0.15, cfg["seed"])
-            p = run_torch(cfg, tr_all[~vmask], tr_all[vmask], te, root, ckpt_dir / f"fold_{name}.pt", log)
+            jsn_tr = None
+            if jsn_dev is not None:  # JSN crops only from this fold's training patients (never inner-val or test)
+                jsn_tr = jsn_dev[jsn_dev.patient_id.isin(set(tr_all[~vmask].patient_id))]
+                log(f"    + {len(jsn_tr)} JSN crops (auxiliary task)")
+            p, gp = run_torch(cfg, tr_all[~vmask], tr_all[vmask], te, root, ckpt_dir / f"fold_{name}.pt", log, jsn_tr)
+            if grade_probs is None:
+                grade_probs = np.full((len(dev_df), gp.shape[1]), np.nan)
+            grade_probs[te_mask] = gp
         preds[te_mask] = p
         outer_id[te_mask] = name
 
@@ -212,6 +274,12 @@ def main() -> None:
     out = dev_df.loc[done, keep].copy()
     out["fold"] = outer_id[done]
     out["prob"] = preds[done]
+    if grade_probs is not None and grade_probs.shape[1] > 2:  # ordinal head: predicted grade for QWK
+        from .ordinal import level_index
+        lv = np.asarray(sorted(cfg["levels"]["BE"]))
+        out["grade_idx"] = level_index(out["score"].values, lv)
+        out["grade_pred_idx"] = np.nanargmax(grade_probs[done], axis=1)
+        out["grade_pred"] = lv[out["grade_pred_idx"].values]
     out.to_csv(run_dir / "oof_predictions.csv", index=False)
     log(f"wrote {run_dir / 'oof_predictions.csv'}; next: python -m arthritis.evaluate {run_dir.relative_to(resolve('.'))}")
 

@@ -4,6 +4,7 @@ seed: 2026
 data:
   root: data/RAM-H1200-v1
   manifest: splits/joints_manifest.csv
+  jsn_manifest: splits/jsn_manifest.csv
   folds: splits/folds.csv
   score_type: BE              # BE (erosion) for now; JSN later
   positive_threshold: 1       # erosion present if SvdH BE >= 1
@@ -31,12 +32,28 @@ train:
   balanced_sampling: true
   num_workers: 4
   amp: true
+  # ---- v2 switches (defaults = v1 behaviour) ----
+  input_mode: resize          # resize: letterbox + resize to image_size | native: keep native pixel scale on a fixed canvas
+  canvas: 320                 # native mode: crops padded to canvas x canvas px (shrunk only if larger); set from `make crop-stats`
+  mirror_left: false          # flip left hands so every crop has right-hand orientation
+  multitask_jsn: false        # also train on joint-space-narrowing crops (shared encoder, separate head)
+  jsn_share: 0.5              # JSN samples per BE sample when multitask_jsn is on
+  jsn_loss_weight: 0.5
   augment:
+    translate: 0.05           # native mode only
     rotate_deg: 10
     scale: [0.85, 1.0]
     brightness: 0.15
     contrast: 0.15
     hflip: false              # never: left/right anatomy matters
+
+# Model options live in configs/exp/<name>.yaml:
+#   model.name (timm id | scratch_cnn | majority | pixel_logreg)
+#   model.head: binary | ordinal (cumulative thresholds over SvdH grades; P(erosion) = P(grade >= 1))
+#   model.joint_embedding: 0 | dim (learned embedding of joint identity, concatenated to image features)
+levels:
+  BE: [0, 1, 2, 3, 5]         # SvdH hand erosion grades observed in RAM-H1200 (no 4s)
+  JSN: [0, 1, 2, 3, 4]
 
 eval:
   n_bootstrap: 2000

@@ -15,7 +15,7 @@ about 4 unique radiographs, so none of v1's numbers are valid (see `docs/v1_post
 | Phase | What | State |
 |---|---|---|
 | 0 | Pre-registered analysis plan (`docs/analysis_plan.md`) | draft |
-| 1 | Joint-level erosion detection on RAM-H1200, grouped CV and leave-one-center-out | in progress |
+| 1 | Joint-level erosion detection on RAM-H1200, grouped CV and leave-one-center-out | baselines done; v1 + v2 deep models ready to run |
 | 2 | End-to-end: automatic joint localization, then erosion detection | planned |
 | 3 | External validation on a different institution or country | planned (data access pending) |
 | 4 | I-JEPA self-supervised pretraining and a label-efficiency study | planned |
