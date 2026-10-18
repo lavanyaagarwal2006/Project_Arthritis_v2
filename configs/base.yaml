@@ -34,7 +34,7 @@ train:
   amp: true
   # ---- v2 switches (defaults = v1 behaviour) ----
   input_mode: resize          # resize: letterbox + resize to image_size | native: keep native pixel scale on a fixed canvas
-  canvas: 320                 # native mode: crops padded to canvas x canvas px (shrunk only if larger); set from `make crop-stats`
+  canvas: 224                 # native mode: crops padded to canvas x canvas px (shrunk only if larger); set from `make crop-stats`
   mirror_left: false          # flip left hands so every crop has right-hand orientation
   multitask_jsn: false        # also train on joint-space-narrowing crops (shared encoder, separate head)
   jsn_share: 0.5              # JSN samples per BE sample when multitask_jsn is on

@@ -33,11 +33,15 @@ snapshot_download("TokyoTechMagicYang/RAM-H1200-v1", repo_type="dataset", local_
 !PYTHONPATH=src python scripts/speedtest.py --exp densenet121
 ```
 ```python
-EXP = "densenet121_v2"          # or densenet121, densenet121_native, densenet121_v2_mt
-!PYTHONPATH=src python -m arthritis.train --exp {EXP} --run-name {EXP}_cv
-!PYTHONPATH=src python -m arthritis.evaluate results/{EXP}_cv
-!cd results && zip -qr /kaggle/working/{EXP}_results.zip {EXP}_cv summary.csv
+# v1 then v2 in one session, then the paired comparison
+for EXP in ["densenet121", "densenet121_v2"]:
+    !PYTHONPATH=src python -m arthritis.train --exp {EXP} --run-name {EXP}_cv
+    !PYTHONPATH=src python -m arthritis.evaluate results/{EXP}_cv --compare results/joint_prior_cv
+!PYTHONPATH=src python -m arthritis.evaluate results/densenet121_v2_cv --compare results/densenet121_cv
+!cd results && zip -qr /kaggle/working/results_v1_v2.zip densenet121_cv densenet121_v2_cv summary.csv
 ```
+Checkpoints stay in `checkpoints/` on Kaggle. Also download `checkpoints/densenet121_v2_cv/` if you want
+the trained weights for the web app; they are not in the zip.
 
 For a long run, click **Save Version → Save & Run All**. It runs in the background, and you can close
 the tab. When it finishes, download `<EXP>_results.zip` from the version's **Output** tab.
@@ -45,8 +49,8 @@ the tab. When it finishes, download `<EXP>_results.zip` from the version's **Out
 ## Bring results home
 ```bash
 cd ~/projects/project-arthritis
-unzip -o ~/Downloads/densenet121_v2_results.zip -d results/
-git add results/ && git commit -m "exp: densenet121_v2 5-fold CV (Kaggle T4)" && git push
+unzip -o ~/Downloads/results_v1_v2.zip -d results/
+git add results/ && git commit -m "exp: densenet121 v1 + v2 5-fold CV (Kaggle T4)" && git push
 ```
 Results carry the git SHA of the code that produced them, so make sure the notebook cloned the commit
 you meant to run (the run log prints it).

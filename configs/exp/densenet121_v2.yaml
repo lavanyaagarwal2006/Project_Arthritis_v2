@@ -1,5 +1,6 @@
 # v2 recipe: same backbone as densenet121.yaml, three changes from the research doc (Methods 1, 2, 5):
-#   native pixel scale on a fixed canvas (no downsampling of small erosions; 1 px = same mm for every joint)
+#   native pixel scale on a fixed canvas (1 px = 0.175 mm for every joint; v1 instead stretched each crop to
+#   224 px, enlarging small carpal crops ~3x and shrinking the radius, so erosion size varied by joint)
 #   ordinal head over SvdH grades 0/1/2/3/5 (P(erosion) = P(grade >= 1); grades add supervision)
 #   joint-identity embedding + left hands mirrored to right-hand orientation
 # Each piece is a switch, so the ablations below isolate what helped.
@@ -10,7 +11,7 @@ model:
   joint_embedding: 16
 train:
   input_mode: native
-  canvas: 320          # replace with the value `make crop-stats` recommends
+  canvas: 224          # from `make crop-stats`: p95 crop side 197 px, 0.5% of crops shrunk
   mirror_left: true
-  batch_size: 32
+  batch_size: 64
   lr: 1.0e-4

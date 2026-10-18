@@ -9,6 +9,7 @@ Usage: python scripts/make_synthetic.py data/synthetic [--patients 60]
 from __future__ import annotations
 
 import argparse
+import shutil
 import json
 from pathlib import Path
 
@@ -45,6 +46,8 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
+    if args.out.exists():  # stale files from an older generator would be picked up by the manifest
+        shutil.rmtree(args.out)
     base = args.out / "SvdH_Scoring" / "SvdH_BE_Scoring"
     jbase = args.out / "SvdH_Scoring" / "SvdH_JSN_Scoring"
     meta = []

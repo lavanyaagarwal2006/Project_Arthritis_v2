@@ -4,6 +4,6 @@ model:
   pretrained: true
 train:
   input_mode: native
-  canvas: 320
-  batch_size: 32
+  canvas: 224
+  batch_size: 64
   lr: 1.0e-4

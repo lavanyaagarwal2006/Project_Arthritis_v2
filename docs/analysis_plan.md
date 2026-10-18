@@ -176,3 +176,25 @@ Endpoints, splits, metrics and the sealed test set are unchanged. Changes:
   The primary endpoint is still P(erosion) = P(grade ≥ 1). The ordinal head additionally reports
   grade QWK, so results can be compared with the RAM-H1200 benchmark. That comparison is like for
   like in kind only, not on the same split.
+
+**A3 (2026-10-17, before any deep-model result).** Findings from `crop-stats`, the speed test and the
+`joint_prior` baseline.
+
+- **Pixel scale.** It is consistent across centers: median crop size per joint is within 0.88–1.12×
+  of the cross-center median, which confirms A2. The spacing difference is therefore not a center
+  shortcut.
+- **Crop sizes.** Finger crops (MCP, PIP, IP) are a fixed 170 px. Carpal and wrist crops vary from
+  73 px (trapezium) to 267 px (radius).
+- **Effect on v1.** v1 resizes every crop to 224 px, so finger crops are slightly *enlarged*, not
+  downsampled. The expected gain from native scale is therefore consistent physical scale across
+  joint types, not recovered resolution. The research doc's "largest single gain" expectation for
+  Methods 1 is downgraded accordingly.
+- **Canvas.** Set to 224, the p95 of the longer crop side (197 px) rounded up; 0.5% of crops are
+  shrunk. v2 therefore costs the same compute as v1.
+- **The floor is the joint prior.** `joint_prior` scored AUROC 0.630 (0.610–0.650) and the pixel
+  logistic regression 0.624 (0.605–0.643). The pixel model learned nothing beyond which joint it
+  was looking at, so every deep model is compared against `joint_prior`.
+- **Aborted run.** The Mac run of `densenet121_cv` was stopped after 4 epochs of fold 0 at 1–3 h per
+  epoch, which is impractical. Its inner-val AUROC trajectory (0.73 → 0.81) was not used for any
+  decision. Deep-model cross-validation moves to a GPU (docs/KAGGLE.md) with unchanged code, folds
+  and seeds.

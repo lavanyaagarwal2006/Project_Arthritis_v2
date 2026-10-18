@@ -1,6 +1,0 @@
-run densenet121_cv: 14928 dev joints / 190 patients, git 9027e81-dirty
-  outer fold 0: train+val 154 pts, test 36 pts
-    epoch 00 loss 0.6685 inner-val AUROC 0.7265 (3298s)
-    epoch 01 loss 0.5537 inner-val AUROC 0.7622 (8455s)
-    epoch 02 loss 0.4784 inner-val AUROC 0.7872 (10463s)
-    epoch 03 loss 0.4088 inner-val AUROC 0.8101 (10177s)
