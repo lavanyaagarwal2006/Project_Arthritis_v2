@@ -1,0 +1,20 @@
+# v3 + zoom: the 224-px native canvas (uniform 0.175 mm/px) is resized to 384 px, so small finger erosions
+# occupy ~3x more of the network's feature map. Evidence (A4): finger joints (PIP, IP, MCP4) are the
+# weakest (AUROC 0.62-0.66) and are where early RA erosions start. ~3x compute.
+model:
+  name: densenet121.tv_in1k
+  pretrained: true
+  head: ordinal
+  joint_embedding: 16
+train:
+  input_mode: native
+  canvas: 224
+  image_size: 384
+  mirror_left: true
+  batch_size: 32
+  lr: 3.0e-5
+  weight_decay: 1.0e-2
+  label_smoothing: 0.05
+  ema: 0.995
+  epochs: 25
+  early_stop_patience: 6

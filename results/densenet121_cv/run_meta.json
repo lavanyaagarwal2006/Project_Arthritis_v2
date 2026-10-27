@@ -1,0 +1,84 @@
+{
+  "exp_name": "densenet121",
+  "scheme": "cv",
+  "git_sha": "46a76e2",
+  "smoke": false,
+  "started": "2026-10-26T21:50:32",
+  "config": {
+    "seed": 2026,
+    "data": {
+      "root": "data/RAM-H1200-v1",
+      "manifest": "splits/joints_manifest.csv",
+      "jsn_manifest": "splits/jsn_manifest.csv",
+      "folds": "splits/folds.csv",
+      "score_type": "BE",
+      "positive_threshold": 1,
+      "metadata_file": "auto",
+      "metadata_image_col": "auto",
+      "metadata_patient_col": "auto",
+      "metadata_center_col": "auto",
+      "metadata_isra_col": "auto",
+      "patient_key": "auto",
+      "loco_min_hands": 50,
+      "sealed_split": "test"
+    },
+    "cv": {
+      "n_folds": 5
+    },
+    "train": {
+      "image_size": 224,
+      "batch_size": 64,
+      "epochs": 40,
+      "lr": 0.0001,
+      "weight_decay": 0.0001,
+      "warmup_epochs": 2,
+      "early_stop_patience": 8,
+      "balanced_sampling": true,
+      "num_workers": 4,
+      "amp": true,
+      "input_mode": "resize",
+      "canvas": 224,
+      "mirror_left": false,
+      "multitask_jsn": false,
+      "jsn_share": 0.5,
+      "jsn_loss_weight": 0.5,
+      "augment": {
+        "translate": 0.05,
+        "rotate_deg": 10,
+        "scale": [
+          0.85,
+          1.0
+        ],
+        "brightness": 0.15,
+        "contrast": 0.15,
+        "hflip": false
+      }
+    },
+    "levels": {
+      "BE": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "JSN": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "eval": {
+      "n_bootstrap": 2000,
+      "target_sensitivity": 0.9,
+      "ece_bins": 15
+    },
+    "model": {
+      "name": "densenet121.tv_in1k",
+      "pretrained": true
+    },
+    "exp_name": "densenet121"
+  }
+}

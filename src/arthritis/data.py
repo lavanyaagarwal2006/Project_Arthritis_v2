@@ -41,6 +41,10 @@ def build_transforms(cfg: dict, train: bool, pretrained: bool):
             ops += [T.RandomAffine(degrees=aug["rotate_deg"], translate=(aug["translate"], aug["translate"]),
                                    scale=(0.92, 1.08)),
                     T.ColorJitter(brightness=aug["brightness"], contrast=aug["contrast"])]
+        # Optional zoom: the canvas keeps one physical scale for every joint; resizing the whole canvas
+        # afterwards keeps that scale uniform while giving small (finger) erosions more pixels in the network.
+        if int(t.get("image_size", t.get("canvas", 224))) != int(t.get("canvas", 224)):
+            ops.append(T.Resize((int(t["image_size"]), int(t["image_size"])), antialias=True))
     else:
         size = t["image_size"]
         if train:

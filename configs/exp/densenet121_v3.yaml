@@ -1,0 +1,20 @@
+# v3 = v2 + regularisation. Evidence (A4): in v1 and v2 inner-val AUROC peaked after 2-5 epochs while the
+# training loss kept falling to ~0.05 -> the model memorises 154 patients. Changes vs v2:
+#   lr 1e-4 -> 3e-5, weight decay 1e-4 -> 1e-2, label smoothing 0.05, EMA of weights (decay 0.995),
+#   shorter schedule (25 epochs, patience 6).
+model:
+  name: densenet121.tv_in1k
+  pretrained: true
+  head: ordinal
+  joint_embedding: 16
+train:
+  input_mode: native
+  canvas: 224
+  mirror_left: true
+  batch_size: 64
+  lr: 3.0e-5
+  weight_decay: 1.0e-2
+  label_smoothing: 0.05
+  ema: 0.995
+  epochs: 25
+  early_stop_patience: 6

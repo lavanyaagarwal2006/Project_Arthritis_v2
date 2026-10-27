@@ -77,6 +77,18 @@ def evaluate(df: pd.DataFrame, n_boot: int = 2000, target_sens: float = 0.90, ec
             "confusion": pd.crosstab(df.grade_idx, df.grade_pred_idx).to_dict(),
             "benchmark_note": "RAM-H1200 paper, erosion scoring on official test: best QWK 0.4522 (MedMamba), best BACC 35.87% (ResNet)",
         }
+        gp_cols = sorted([c for c in df.columns if c.startswith("gp") and c[2:].isdigit()], key=lambda c: int(c[2:]))
+        if gp_cols:  # cross-fitted cut-offs on the expected grade: fit on other folds, apply to each held-out fold
+            from .ordinal import decode_with_cutoffs, fit_cutoffs
+            P = df[gp_cols].values
+            expected = P @ np.arange(P.shape[1])
+            pred = np.zeros(len(df), dtype=int)
+            for k in sorted(df.fold.unique()):
+                tr, te = (df.fold != k).values, (df.fold == k).values
+                cuts = fit_cutoffs(expected[tr], df.grade_idx.values[tr], P.shape[1], qwk)
+                pred[te] = decode_with_cutoffs(expected[te], cuts)
+            res["grade"]["qwk_tuned_decoding"] = M.cluster_bootstrap(df.grade_idx.values, pred, g, qwk, n_boot, seed)
+            res["grade"]["balanced_accuracy_tuned_decoding"] = float(balanced_accuracy_score(df.grade_idx, pred))
 
     # Per-joint AUROC (wrist joints are the weakest in every published study)
     res["per_joint_auroc"] = {str(jn): M.auroc(d.label, d.prob) for jn, d in df.groupby("joint")}
@@ -131,6 +143,8 @@ def make_figures(df: pd.DataFrame, res: dict, outdir: Path) -> None:
 
 
 def append_summary(run_dir: Path, res: dict, meta: dict) -> None:
+    if meta.get("smoke") or run_dir.name.startswith(("smoke", "syn")):
+        return  # synthetic pipeline checks never enter the results table
     j, h = res["joint"], res.get("hand_any_erosion", {})
     fmt = lambda d: f"{d['value']:.3f} [{d['ci_low']:.3f}, {d['ci_high']:.3f}]"  # noqa: E731
     row = {"run": run_dir.name, "exp": meta.get("exp_name", ""), "scheme": meta.get("scheme", ""),
@@ -140,6 +154,7 @@ def append_summary(run_dir: Path, res: dict, meta: dict) -> None:
            "minimal_vs_none_auroc": fmt(res["joint_minimal_erosion_vs_none"]["auroc"]) if "joint_minimal_erosion_vs_none" in res else "",
            "hand_auroc": fmt(h["auroc"]) if "auroc" in h else "",
            "grade_qwk": fmt(res["grade"]["qwk"]) if "grade" in res else "",
+           "grade_qwk_decoded": fmt(res["grade"]["qwk_tuned_decoding"]) if "qwk_tuned_decoding" in res.get("grade", {}) else "",
            "ece_raw": f"{res['calibration']['ece_raw']:.3f}",
            "ece_temp": f"{res['calibration']['ece_temperature_scaled']:.3f}",
            "ece_platt": f"{res['calibration']['ece_platt']:.3f}"}
@@ -186,6 +201,10 @@ def main() -> None:
         q = res["grade"]["qwk"]
         print(f"   grade agreement: QWK {q['value']:.3f} ({q['ci_low']:.3f}–{q['ci_high']:.3f}), "
               f"balanced acc {res['grade']['balanced_accuracy']:.1%}  [RAM-H1200 benchmark best: QWK 0.452, BACC 35.9%]")
+        if "qwk_tuned_decoding" in res["grade"]:
+            t = res["grade"]["qwk_tuned_decoding"]
+            print(f"   grade agreement, cross-fitted decoding: QWK {t['value']:.3f} ({t['ci_low']:.3f}–{t['ci_high']:.3f}), "
+                  f"balanced acc {res['grade']['balanced_accuracy_tuned_decoding']:.1%}")
     pj = {k: v for k, v in res["per_joint_auroc"].items() if np.isfinite(v)}
     if pj:
         lo = sorted(pj.items(), key=lambda kv: kv[1])[:3]

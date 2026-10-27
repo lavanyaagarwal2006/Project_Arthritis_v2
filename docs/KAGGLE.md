@@ -57,3 +57,25 @@ you meant to run (the run log prints it).
 
 Never upload the dataset itself to a public Kaggle dataset: the licence is non-commercial share-alike,
 and the gate exists for a reason. Downloading inside the notebook with your own token keeps that intact.
+
+## Round 3 cells (two GPUs in parallel)
+Cell 4:
+```python
+import subprocess, os
+procs = []
+for gpu, EXP in [(0, "densenet121_v3"), (1, "densenet121_v3_384")]:
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu), PYTHONPATH="src")
+    log = open(f"/kaggle/working/{EXP}_train.log", "w")
+    procs.append(subprocess.Popen(["python", "-m", "arthritis.train", "--exp", EXP, "--run-name", f"{EXP}_cv"],
+                                  env=env, stdout=log, stderr=subprocess.STDOUT))
+for p in procs:
+    p.wait()
+print("exit codes (0 = ok):", [p.returncode for p in procs])
+```
+Cell 5:
+```python
+!PYTHONPATH=src python -m arthritis.evaluate results/densenet121_v3_cv --compare results/densenet121_v2_cv
+!PYTHONPATH=src python -m arthritis.evaluate results/densenet121_v3_384_cv --compare results/densenet121_v3_cv
+!cd results && zip -qr /kaggle/working/results_v3.zip densenet121_v3_cv densenet121_v3_384_cv summary.csv
+!mkdir -p /kaggle/working/weights && cp -r checkpoints/densenet121_v3_cv checkpoints/densenet121_v3_384_cv /kaggle/working/weights/
+```

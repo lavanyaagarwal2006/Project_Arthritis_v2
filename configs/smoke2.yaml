@@ -15,3 +15,6 @@ train:
   mirror_left: true
   multitask_jsn: true
   batch_size: 16
+  image_size: 96          # exercises the zoom path
+  label_smoothing: 0.05
+  ema: 0.99

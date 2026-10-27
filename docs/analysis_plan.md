@@ -198,3 +198,48 @@ Endpoints, splits, metrics and the sealed test set are unchanged. Changes:
   epoch, which is impractical. Its inner-val AUROC trajectory (0.73 → 0.81) was not used for any
   decision. Deep-model cross-validation moves to a GPU (docs/KAGGLE.md) with unchanged code, folds
   and seeds.
+
+**A4 (2026-10-26). First deep-model results (5-fold out-of-fold, Kaggle T4, commit 46a76e2) and the
+round-3 decisions they drive.**
+
+| Run | Joint AUROC (95% CI) | Minimal vs none | Hand any-erosion | Grade QWK |
+|---|---|---|---|---|
+| joint_prior | 0.630 (0.610–0.650) | 0.656 | 0.486 | – |
+| densenet121 (v1) | 0.753 (0.731–0.775) | 0.713 | 0.714 | – |
+| densenet121_v2 | 0.760 (0.744–0.776) | 0.728 | 0.685 | 0.433 (0.367–0.487) |
+
+- **v1 vs joint prior: ΔAUROC +0.123 (0.093–0.154).** The model sees erosions, not just which joint
+  is in the crop.
+- **v2 vs v1: ΔAUROC +0.007 (−0.009 to +0.024).** The gain is not established. Under Section 7 none
+  of v2's components is claimed as an improvement. v2 becomes the base because it is non-inferior
+  (lower bound −0.009) and adds grade output for the clinical interface. This decision rests on
+  functionality and is recorded here.
+- **The pre-registered predictions in the 2026-10-26 conversation (v1 ≈ 0.84) were too optimistic.**
+  They extrapolated from a single fold's inner-val AUROC on the aborted Mac run. Across folds,
+  inner-val peaks were 0.73–0.83, consistent with the out-of-fold results.
+- **Performance by erosion grade (exploratory, not pre-specified).** v1 AUROC is 0.713 for grade 1,
+  0.829 for grade 2 and 0.881 for grade 3 vs grade 0. 71% of positive joints are grade 1, so the
+  primary AUROC is dominated by the subtlest lesions. Grade 1 is also the grade with the poorest
+  inter-reader agreement in SvdH scoring.
+- **Per-joint (v2).** The weakest joints are PIP-S 0.624, PIP-R 0.641, MCP-R 0.647, IP 0.676 and
+  PIP-I 0.683. The strongest are R 0.843, L 0.835 and U 0.807. This is the opposite of the literature,
+  where the wrist is weakest. Finger joints are where early RA erosions typically start.
+- **Training curves.** Inner-val AUROC peaked at epochs 2–8 while the training loss fell to
+  0.05–0.1, which is overfitting with 150 training patients per fold.
+- **Hand-context stacking (exploratory, cross-fitted by fold).** Adding the other joints' and the
+  contralateral joint's scores did not help: ΔAUROC −0.005 (−0.009 to −0.001). Method 5 (hand-level
+  aggregator) is dropped.
+- **Calibration.** Platt ECE is 0.007 for v2, adequate for displayed probabilities.
+- **Centers.** Out-of-fold AUROC by center is HMCRD 0.753, SARC 0.765 and SCGH 0.771. No center is
+  an outlier.
+
+**Round 3 (pre-specified, compared by paired ΔAUROC on out-of-fold predictions):**
+1. `densenet121_v3`, compared against v2. It adds regularisation for the overfitting: lr 3e-5,
+   weight decay 1e-2, label smoothing 0.05, EMA of weights at 0.995, and a 25-epoch schedule with
+   patience 6.
+2. `densenet121_v3_384`, compared against v3. It adds a 384-px zoom of the uniform-scale canvas,
+   aimed at the weak finger joints.
+
+Deferred until round 3 reads out: ensembling and TTA (final model only), erosion-mask supervision,
+and domain-specific pretraining (I-JEPA on unlabelled hand radiographs). The overfitting finding is
+the motivation for the JEPA study.

@@ -127,11 +127,34 @@ def run_torch(cfg: dict, train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFr
     ev_tf = build_transforms(cfg, False, pretrained)
     va_dl = DataLoader(JointDataset(va, root, ev_tf, ch, cfg), batch_size=tcfg["batch_size"] * 2, **dl_kw)
 
+    # EMA of weights (train.ema = decay, 0 = off): a smoothed copy used for validation and prediction.
+    # The inner-val curves in v1/v2 peaked after 2-5 epochs and then oscillated; EMA damps that noise.
+    ema_decay = float(tcfg.get("ema", 0) or 0)
+    ema = None
+    if ema_decay:
+        import copy
+        ema = copy.deepcopy(model).eval()
+        for p_ in ema.parameters():
+            p_.requires_grad_(False)
+
+    def ema_update():
+        with torch.no_grad():
+            for e_, m_ in zip(ema.state_dict().values(), model.state_dict().values()):
+                if e_.dtype.is_floating_point:
+                    e_.mul_(ema_decay).add_(m_.detach(), alpha=1 - ema_decay)
+                else:
+                    e_.copy_(m_)
+
+    eval_net = lambda: ema if ema is not None else model  # noqa: E731
+    if ema is not None:
+        log(f"    EMA of weights, decay {ema_decay}")
+
     def predict(dl):
-        model.eval(); out = []
+        net = eval_net()
+        net.eval(); out = []
         with torch.no_grad():
             for x, _, _, j, _, _ in dl:
-                be, _ = model(x.to(dev), j.to(dev))
+                be, _ = net(x.to(dev), j.to(dev))
                 out.append(torch.sigmoid(be.float()).cpu().numpy())
         return np.concatenate(out)  # [N, k_be] threshold probabilities
 
@@ -150,12 +173,16 @@ def run_torch(cfg: dict, train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFr
     use_amp = tcfg["amp"] and dev == "cuda"
     scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
 
+    ls = float(tcfg.get("label_smoothing", 0) or 0)
+
     def loss_fn(be_logit, jsn_logit, grade, task):
         m_be = task == 0
         tgt = (grade[:, None] > thr_be[None, :]).float()
+        if ls:
+            tgt = tgt * (1 - ls) + ls / 2
         l_be = bce(be_logit, tgt)
         if pos_w is not None:
-            l_be = l_be * torch.where(tgt > 0, pos_w, torch.ones_like(tgt))
+            l_be = l_be * torch.where(tgt > 0.5, pos_w, torch.ones_like(tgt))
         loss = l_be[m_be].mean() if m_be.any() else be_logit.sum() * 0
         if jsn_logit is not None and (~m_be).any():
             tj = (grade[:, None] > thr_jsn[None, :]).float()
@@ -172,6 +199,8 @@ def run_torch(cfg: dict, train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFr
             loss = loss_fn(be.float(), None if js is None else js.float(), grade, task)
             opt.zero_grad(set_to_none=True)
             scaler.scale(loss).backward(); scaler.step(opt); scaler.update(); sched.step()
+            if ema is not None:
+                ema_update()
             tot += loss.item() * len(x); n += len(x)
         v_auc = auroc(va.label.values, predict(va_dl)[:, 0])
         if not np.isfinite(v_auc):  # inner-val has one class (tiny smoke subsets): keep training, save last epoch
@@ -179,13 +208,13 @@ def run_torch(cfg: dict, train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFr
         log(f"    epoch {ep:02d} loss {tot / max(1, n):.4f} inner-val AUROC {v_auc:.4f} ({time.time() - t0:.0f}s)")
         if v_auc > best + 1e-4:
             best, bad = v_auc, 0
-            torch.save(model.state_dict(), ckpt_path)
+            torch.save(eval_net().state_dict(), ckpt_path)
         else:
             bad += 1
             if bad >= tcfg["early_stop_patience"]:
                 log(f"    early stop at epoch {ep} (best inner-val AUROC {best:.4f})")
                 break
-    model.load_state_dict(torch.load(ckpt_path, map_location=dev))
+    eval_net().load_state_dict(torch.load(ckpt_path, map_location=dev))
     te_dl = DataLoader(JointDataset(te, root, ev_tf, ch, cfg), batch_size=tcfg["batch_size"] * 2, **dl_kw)
     p = predict(te_dl)
     return p[:, 0], class_probs(p)
@@ -280,6 +309,8 @@ def main() -> None:
         out["grade_idx"] = level_index(out["score"].values, lv)
         out["grade_pred_idx"] = np.nanargmax(grade_probs[done], axis=1)
         out["grade_pred"] = lv[out["grade_pred_idx"].values]
+        for k in range(grade_probs.shape[1]):  # full class probabilities, for cross-fitted grade decoding
+            out[f"gp{k}"] = grade_probs[done][:, k]
     out.to_csv(run_dir / "oof_predictions.csv", index=False)
     log(f"wrote {run_dir / 'oof_predictions.csv'}; next: python -m arthritis.evaluate {run_dir.relative_to(resolve('.'))}")
 
