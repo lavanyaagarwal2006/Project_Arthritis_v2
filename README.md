@@ -7,8 +7,7 @@ radiographic hallmark of erosive rheumatoid arthritis. The goal is a clinician-f
 for spotting early erosions. It is not a standalone RA diagnosis.
 
 This repo supersedes [Project_Arthritis_v1](https://github.com/lavanyaagarwal2006/Project_Arthritis_v1).
-v1 was trained on the Roboflow RF100 x-ray-rheumatology set. Its 185 files trace back to
-about 4 unique radiographs, so none of v1's numbers are valid (see `docs/v1_postmortem.md`).
+v1 was trained on the Roboflow RF100 x-ray-rheumatology set.
 
 ## Status
 
