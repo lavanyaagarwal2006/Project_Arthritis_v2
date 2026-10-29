@@ -1,0 +1,31 @@
+{
+  "members": [
+    "densenet121",
+    "densenet121_v2",
+    "densenet121_v3",
+    "densenet121_v3_384",
+    "convnext_tiny_v3",
+    "effnetv2s_v3"
+  ],
+  "threshold": 0.1913863830268382,
+  "target_sensitivity": 0.9,
+  "platt": [
+    0.911074876895172,
+    -0.8072978117121832
+  ],
+  "oof_source": "results/ens6_cv/oof_predictions.csv",
+  "oof_auroc": 0.8040665300886484,
+  "git_sha_at_lock": "cfcdada-dirty",
+  "grade_members": [
+    "densenet121_v3",
+    "densenet121_v3_384",
+    "convnext_tiny_v3",
+    "effnetv2s_v3"
+  ],
+  "grade_cutoffs": [
+    0.6605514464902219,
+    1.096905435306718,
+    1.3186428845017208,
+    2.0026753849373184
+  ]
+}

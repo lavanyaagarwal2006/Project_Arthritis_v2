@@ -1,0 +1,85 @@
+run convnext_tiny_v3_cv: 14928 dev joints / 190 patients, git cfcdada
+  outer fold 0: train+val 154 pts, test 36 pts
+    device CUDA | 27.8M params | heads: erosion 4
+    EMA of weights, decay 0.995
+    epoch 00 loss 0.4522 inner-val AUROC 0.5259 (82s)
+    epoch 01 loss 0.3374 inner-val AUROC 0.6643 (60s)
+    epoch 02 loss 0.3092 inner-val AUROC 0.7294 (61s)
+    epoch 03 loss 0.2854 inner-val AUROC 0.7512 (61s)
+    epoch 04 loss 0.2694 inner-val AUROC 0.7734 (60s)
+    epoch 05 loss 0.2581 inner-val AUROC 0.7837 (60s)
+    epoch 06 loss 0.2420 inner-val AUROC 0.7871 (61s)
+    epoch 07 loss 0.2272 inner-val AUROC 0.7904 (61s)
+    epoch 08 loss 0.2173 inner-val AUROC 0.7888 (60s)
+    epoch 09 loss 0.2047 inner-val AUROC 0.7862 (61s)
+    epoch 10 loss 0.1960 inner-val AUROC 0.7824 (60s)
+    epoch 11 loss 0.1909 inner-val AUROC 0.7824 (61s)
+    epoch 12 loss 0.1844 inner-val AUROC 0.7812 (60s)
+    epoch 13 loss 0.1757 inner-val AUROC 0.7812 (61s)
+    early stop at epoch 13 (best inner-val AUROC 0.7904)
+  outer fold 1: train+val 151 pts, test 39 pts
+    device CUDA | 27.8M params | heads: erosion 4
+    EMA of weights, decay 0.995
+    epoch 00 loss 0.4649 inner-val AUROC 0.5984 (65s)
+    epoch 01 loss 0.3427 inner-val AUROC 0.7546 (62s)
+    epoch 02 loss 0.3090 inner-val AUROC 0.7810 (61s)
+    epoch 03 loss 0.2895 inner-val AUROC 0.7827 (61s)
+    epoch 04 loss 0.2666 inner-val AUROC 0.7883 (60s)
+    epoch 05 loss 0.2511 inner-val AUROC 0.7902 (61s)
+    epoch 06 loss 0.2356 inner-val AUROC 0.7935 (61s)
+    epoch 07 loss 0.2261 inner-val AUROC 0.7916 (62s)
+    epoch 08 loss 0.2139 inner-val AUROC 0.7898 (62s)
+    epoch 09 loss 0.2021 inner-val AUROC 0.7892 (62s)
+    epoch 10 loss 0.1924 inner-val AUROC 0.7880 (61s)
+    epoch 11 loss 0.1863 inner-val AUROC 0.7887 (61s)
+    epoch 12 loss 0.1785 inner-val AUROC 0.7824 (61s)
+    early stop at epoch 12 (best inner-val AUROC 0.7935)
+  outer fold 2: train+val 152 pts, test 38 pts
+    device CUDA | 27.8M params | heads: erosion 4
+    EMA of weights, decay 0.995
+    epoch 00 loss 0.4849 inner-val AUROC 0.5941 (62s)
+    epoch 01 loss 0.3471 inner-val AUROC 0.7632 (61s)
+    epoch 02 loss 0.3147 inner-val AUROC 0.8103 (61s)
+    epoch 03 loss 0.2895 inner-val AUROC 0.8294 (61s)
+    epoch 04 loss 0.2709 inner-val AUROC 0.8307 (61s)
+    epoch 05 loss 0.2564 inner-val AUROC 0.8270 (61s)
+    epoch 06 loss 0.2442 inner-val AUROC 0.8232 (61s)
+    epoch 07 loss 0.2293 inner-val AUROC 0.8147 (61s)
+    epoch 08 loss 0.2179 inner-val AUROC 0.8058 (62s)
+    epoch 09 loss 0.2079 inner-val AUROC 0.7957 (61s)
+    epoch 10 loss 0.1964 inner-val AUROC 0.7900 (61s)
+    early stop at epoch 10 (best inner-val AUROC 0.8307)
+  outer fold 3: train+val 153 pts, test 37 pts
+    device CUDA | 27.8M params | heads: erosion 4
+    EMA of weights, decay 0.995
+    epoch 00 loss 0.4593 inner-val AUROC 0.5286 (62s)
+    epoch 01 loss 0.3436 inner-val AUROC 0.6856 (62s)
+    epoch 02 loss 0.3116 inner-val AUROC 0.7440 (62s)
+    epoch 03 loss 0.2844 inner-val AUROC 0.7704 (61s)
+    epoch 04 loss 0.2642 inner-val AUROC 0.7862 (62s)
+    epoch 05 loss 0.2484 inner-val AUROC 0.7945 (63s)
+    epoch 06 loss 0.2359 inner-val AUROC 0.7943 (62s)
+    epoch 07 loss 0.2203 inner-val AUROC 0.7925 (63s)
+    epoch 08 loss 0.2108 inner-val AUROC 0.7908 (62s)
+    epoch 09 loss 0.2002 inner-val AUROC 0.7865 (61s)
+    epoch 10 loss 0.1916 inner-val AUROC 0.7826 (62s)
+    epoch 11 loss 0.1817 inner-val AUROC 0.7800 (62s)
+    early stop at epoch 11 (best inner-val AUROC 0.7945)
+  outer fold 4: train+val 150 pts, test 40 pts
+    device CUDA | 27.8M params | heads: erosion 4
+    EMA of weights, decay 0.995
+    epoch 00 loss 0.4361 inner-val AUROC 0.5487 (64s)
+    epoch 01 loss 0.3314 inner-val AUROC 0.6385 (63s)
+    epoch 02 loss 0.3038 inner-val AUROC 0.6969 (63s)
+    epoch 03 loss 0.2862 inner-val AUROC 0.7258 (63s)
+    epoch 04 loss 0.2673 inner-val AUROC 0.7382 (63s)
+    epoch 05 loss 0.2533 inner-val AUROC 0.7459 (63s)
+    epoch 06 loss 0.2401 inner-val AUROC 0.7485 (64s)
+    epoch 07 loss 0.2290 inner-val AUROC 0.7468 (63s)
+    epoch 08 loss 0.2172 inner-val AUROC 0.7459 (62s)
+    epoch 09 loss 0.2062 inner-val AUROC 0.7462 (62s)
+    epoch 10 loss 0.1983 inner-val AUROC 0.7471 (63s)
+    epoch 11 loss 0.1931 inner-val AUROC 0.7415 (62s)
+    epoch 12 loss 0.1822 inner-val AUROC 0.7358 (61s)
+    early stop at epoch 12 (best inner-val AUROC 0.7485)
+wrote /tmp/pa/results/convnext_tiny_v3_cv/oof_predictions.csv; next: python -m arthritis.evaluate results/convnext_tiny_v3_cv

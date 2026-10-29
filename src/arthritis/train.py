@@ -223,7 +223,8 @@ def run_torch(cfg: dict, train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFr
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--exp", required=True)
-    ap.add_argument("--scheme", default="cv", choices=["cv", "loco"])
+    ap.add_argument("--scheme", default="cv", choices=["cv", "loco", "full"],
+                    help="full = one model on all dev patients (15%% inner val for early stopping), for the final ensemble")
     ap.add_argument("--smoke", action="store_true", help="2 epochs, small subset: checks the pipeline, not the model")
     ap.add_argument("--run-name", default=None)
     args = ap.parse_args()
@@ -264,6 +265,19 @@ def main() -> None:
             "started": datetime.now().isoformat(timespec="seconds"), "config": cfg}
     (run_dir / "run_meta.json").write_text(json.dumps(meta, indent=2, default=str))
     log(f"run {run_name}: {len(dev_df)} dev joints / {dev_df.patient_id.nunique()} patients, git {meta['git_sha']}")
+
+    if args.scheme == "full":
+        if cfg["model"]["name"] in ("majority", "joint_prior", "pixel_logreg"):
+            raise SystemExit("full scheme is for neural members only")
+        vmask = inner_split(dev_df, 0.15, cfg["seed"])
+        jsn_tr = jsn_dev[jsn_dev.patient_id.isin(set(dev_df[~vmask].patient_id))] if jsn_dev is not None else None
+        log(f"  full fit: train {dev_df[~vmask].patient_id.nunique()} pts, inner val {dev_df[vmask].patient_id.nunique()} pts")
+        ckpt = ckpt_dir / "full.pt"
+        run_torch(cfg, dev_df[~vmask], dev_df[vmask], dev_df[vmask], root, ckpt, log, jsn_tr)
+        (run_dir / "model.json").write_text(json.dumps({"exp": cfg["exp_name"], "checkpoint": str(ckpt.relative_to(resolve("."))),
+                                                         "git_sha": meta["git_sha"]}, indent=2))
+        log(f"saved {ckpt}")
+        return
 
     preds = np.full(len(dev_df), np.nan)
     grade_probs: np.ndarray | None = None

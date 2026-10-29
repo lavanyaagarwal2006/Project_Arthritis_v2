@@ -1,0 +1,14 @@
+{
+  "exp_name": "ens6_cv",
+  "scheme": "cv-ensemble",
+  "git_sha": "cfcdada-dirty",
+  "members": [
+    "results/densenet121_cv",
+    "results/densenet121_v2_cv",
+    "results/densenet121_v3_cv",
+    "results/densenet121_v3_384_cv",
+    "results/convnext_tiny_v3_cv",
+    "results/effnetv2s_v3_cv"
+  ],
+  "grade_members": 4
+}

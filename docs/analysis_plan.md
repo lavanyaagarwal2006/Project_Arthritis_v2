@@ -279,3 +279,38 @@ the motivation for the JEPA study.
      predictions.
    - Run leave-one-center-out for one member (single-model LOCO, stated as such).
    - Evaluate on the sealed test set once.
+
+**A6 (2026-10-28). Round-4 results (commit cfcdada) and the final-model lock.**
+
+| Run | Joint AUROC (95% CI) | Δ (95% CI) | Grade ≥2 vs 0 | QWK, cross-fitted decoding |
+|---|---|---|---|---|
+| convnext_tiny_v3 | 0.786 (0.767–0.804) | +0.020 vs v3 (+0.012 to +0.029) | – | 0.509 (0.439–0.565) |
+| effnetv2s_v3 | 0.758 (0.738–0.777) | −0.008 vs v3 (−0.017 to +0.001) | – | 0.452 (0.382–0.512) |
+| **ens6 (pre-specified in A5)** | **0.804 (0.786–0.822)** | **+0.018 vs best single member (+0.013 to +0.023)** | **0.897** | **0.531 (0.465–0.585)** |
+
+Further detail for ens6:
+- **Grade 1 vs 0:** 0.767. **Hand-level any erosion:** 0.727 (0.664–0.784).
+- **By center:** HMCRD 0.793, SARC 0.815, SCGH 0.807. **Per fold:** 0.789–0.818.
+- **At 90% sensitivity:** specificity 0.479, PPV 0.317, NPV 0.947.
+- **Calibration:** Platt ECE 0.010.
+
+The recompute of ens6 from the member files matches the Kaggle output to 1e-16. ens6 is the internal-validation result for the final model.
+
+**Final steps, pre-specified before the sealed test is opened:**
+1. `scripts/lock_model.py` writes `results/final_lock.json` from ens6 out-of-fold predictions only:
+   - the member list;
+   - the threshold for 90% sensitivity;
+   - Platt (a, b);
+   - the grade cut-offs, fitted on the four members whose out-of-fold files carry grade
+     probabilities.
+
+   The file is committed and tagged `model-lock`.
+2. Each member is retrained on all 190 dev patients (`--scheme full`, 15% inner validation for early
+   stopping, same configs).
+3. Single-member leave-one-center-out for `convnext_tiny_v3`, the best single member, reported as
+   single-model internal-external validation.
+4. `scripts/final_test.py` evaluates the locked ensemble once on the sealed split, which is the
+   official RAM-H1200 test split. It refuses to run without a committed lock and refuses to run
+   twice. Results are reported whatever they are, and tagged `v1.0-test`.
+
+The benchmark comparison is grade QWK on the same official test split, against the published 0.4522.

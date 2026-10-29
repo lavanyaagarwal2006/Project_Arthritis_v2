@@ -104,3 +104,31 @@ for EXP in ["convnext_tiny_v3", "effnetv2s_v3"]:
 !cd results && zip -qr /kaggle/working/results_v4.zip convnext_tiny_v3_cv effnetv2s_v3_cv ens6_cv summary.csv
 !mkdir -p /kaggle/working/weights && cp -r checkpoints/convnext_tiny_v3_cv checkpoints/effnetv2s_v3_cv /kaggle/working/weights/
 ```
+
+## Round 5: final members, LOCO, and the ONE-TIME sealed test
+Prerequisite on the Mac: v4 results unzipped and committed, `python scripts/lock_model.py` run, and
+`results/final_lock.json` committed and pushed with the `model-lock` tag. The test script refuses to run otherwise.
+Cell 4:
+```python
+import subprocess, os
+def chain(gpu, cmds, name):
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu), PYTHONPATH="src")
+    log = open(f"/kaggle/working/{name}.log", "w")
+    return subprocess.Popen(["bash", "-c", " && ".join(cmds)], env=env, stdout=log, stderr=subprocess.STDOUT)
+full = lambda e: f"python -m arthritis.train --exp {e} --scheme full --run-name {e}_full"
+procs = [
+    chain(0, [full("densenet121_v3_384"), full("densenet121"), full("densenet121_v2")], "gpu0"),
+    chain(1, [full("convnext_tiny_v3"), full("effnetv2s_v3"), full("densenet121_v3"),
+              "python -m arthritis.train --exp convnext_tiny_v3 --scheme loco --run-name convnext_tiny_v3_loco"], "gpu1"),
+]
+for p in procs:
+    p.wait()
+print("exit codes (0 = ok):", [p.returncode for p in procs])
+```
+Cell 5:
+```python
+!PYTHONPATH=src python -m arthritis.evaluate results/convnext_tiny_v3_loco
+!PYTHONPATH=src python scripts/final_test.py
+!cd results && zip -qr /kaggle/working/results_final.zip final_test convnext_tiny_v3_loco *_full summary.csv
+!mkdir -p /kaggle/working/weights && cp -r checkpoints/*_full /kaggle/working/weights/
+```
