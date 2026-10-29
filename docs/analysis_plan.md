@@ -243,3 +243,39 @@ round-3 decisions they drive.**
 Deferred until round 3 reads out: ensembling and TTA (final model only), erosion-mask supervision,
 and domain-specific pretraining (I-JEPA on unlabelled hand radiographs). The overfitting finding is
 the motivation for the JEPA study.
+
+**A5 (2026-10-28). Round-3 results (commit 98d69f0) and the pre-specified final-model candidate.**
+
+| Run | Joint AUROC (95% CI) | Δ vs comparator | Grade ≥2 vs 0 | QWK argmax / cross-fitted decoding |
+|---|---|---|---|---|
+| densenet121_v3 | 0.766 (0.747–0.785) | +0.006 vs v2 (−0.008 to +0.019) | 0.860 | 0.453 / 0.486 (0.419–0.537) |
+| densenet121_v3_384 | 0.761 (0.740–0.783) | −0.005 vs v3 (−0.017 to +0.007) | 0.858 | 0.443 / 0.507 (0.449–0.554) |
+
+- **Regularisation.** It changed the training dynamics as intended: smooth curves, peaks at epochs
+  5–14. Out-of-fold AUROC did not change significantly.
+- **The 384-px zoom did not help finger joints** (PIP 0.62–0.72 either way). Label composition
+  explains the finger weakness better than resolution does: 80% of eroded PIP/IP joints are grade 1,
+  against 59% at the wrist and carpus.
+- **Ensembling (exploratory, decided after seeing the members).** Equal-weight averages of
+  out-of-fold predictions on identical folds:
+  - v3 + v3_384: 0.779 (0.759–0.799), Δ vs v3 +0.013 (+0.008 to +0.019).
+  - All four DenseNet runs: 0.799 (0.781–0.817), Δ vs v3 +0.033 (+0.025 to +0.041). Grade ≥2 vs 0:
+    0.893. Grade 1 vs 0: 0.762. By center: HMCRD 0.789, SARC 0.810, SCGH 0.802.
+
+  The models make partly independent errors, so averaging reduces the variance from the small
+  training set.
+
+**Pre-specified for round 4, before any of its results.**
+1. Two new ensemble members with the v3 recipe on other architectures: `convnext_tiny_v3` and
+   `effnetv2s_v3`.
+2. **The final-model candidate is `ens6`: the equal-weight average of all six CV-evaluated members**
+   (densenet121, densenet121_v2, densenet121_v3, densenet121_v3_384, convnext_tiny_v3, effnetv2s_v3).
+   No member selection and no weight tuning.
+3. Its out-of-fold AUROC is the internal-validation result. The 0.799 four-member number above stays
+   labelled exploratory.
+4. Next, and only after round 4:
+   - Retrain each member on all dev patients.
+   - Lock the operating threshold (90% sensitivity) and Platt calibration from ens6 out-of-fold
+     predictions.
+   - Run leave-one-center-out for one member (single-model LOCO, stated as such).
+   - Evaluate on the sealed test set once.

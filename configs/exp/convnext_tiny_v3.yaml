@@ -1,0 +1,18 @@
+# v3 recipe on a different architecture, as an ensemble member (A5): ensembles of the four DenseNet runs
+# gained +0.03-0.04 AUROC out-of-fold, so diversity across architectures is the next lever.
+model:
+  name: convnext_tiny.fb_in22k_ft_in1k
+  pretrained: true
+  head: ordinal
+  joint_embedding: 16
+train:
+  input_mode: native
+  canvas: 224
+  mirror_left: true
+  batch_size: 64
+  lr: 3.0e-5
+  weight_decay: 0.05
+  label_smoothing: 0.05
+  ema: 0.995
+  epochs: 25
+  early_stop_patience: 6

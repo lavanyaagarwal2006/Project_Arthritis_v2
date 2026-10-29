@@ -79,3 +79,28 @@ Cell 5:
 !cd results && zip -qr /kaggle/working/results_v3.zip densenet121_v3_cv densenet121_v3_384_cv summary.csv
 !mkdir -p /kaggle/working/weights && cp -r checkpoints/densenet121_v3_cv checkpoints/densenet121_v3_384_cv /kaggle/working/weights/
 ```
+
+## Round 4 cells (new ensemble members + pre-specified 6-model ensemble)
+Requires the v1, v2 and v3 result folders to be committed in the repo (the ensemble reads their OOF files).
+Cell 4:
+```python
+import subprocess, os
+procs = []
+for gpu, EXP in [(0, "convnext_tiny_v3"), (1, "effnetv2s_v3")]:
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(gpu), PYTHONPATH="src")
+    log = open(f"/kaggle/working/{EXP}_train.log", "w")
+    procs.append(subprocess.Popen(["python", "-m", "arthritis.train", "--exp", EXP, "--run-name", f"{EXP}_cv"],
+                                  env=env, stdout=log, stderr=subprocess.STDOUT))
+for p in procs:
+    p.wait()
+print("exit codes (0 = ok):", [p.returncode for p in procs])
+```
+Cell 5:
+```python
+for EXP in ["convnext_tiny_v3", "effnetv2s_v3"]:
+    !PYTHONPATH=src python -m arthritis.evaluate results/{EXP}_cv --compare results/densenet121_v3_cv
+!PYTHONPATH=src python scripts/ensemble.py --name ens6_cv results/densenet121_cv results/densenet121_v2_cv results/densenet121_v3_cv results/densenet121_v3_384_cv results/convnext_tiny_v3_cv results/effnetv2s_v3_cv
+!PYTHONPATH=src python -m arthritis.evaluate results/ens6_cv --compare results/densenet121_v3_cv
+!cd results && zip -qr /kaggle/working/results_v4.zip convnext_tiny_v3_cv effnetv2s_v3_cv ens6_cv summary.csv
+!mkdir -p /kaggle/working/weights && cp -r checkpoints/convnext_tiny_v3_cv checkpoints/effnetv2s_v3_cv /kaggle/working/weights/
+```
