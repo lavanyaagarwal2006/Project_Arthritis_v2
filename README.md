@@ -9,25 +9,28 @@ RA can have normal radiographs.
 
 Supersedes [Project_Arthritis_v1](https://github.com/lavanyaagarwal2006/Project_Arthritis_v1).
 
-## Headline result (internal validation)
+## Headline result
 
 On **RAM-H1200** (1,200 hand radiographs from 291 patients at 6 hospitals in Sapporo, Japan), the
-pre-specified 6-model ensemble reaches:
+pre-specified, locked 6-model ensemble reaches:
 
-| Metric (patient-grouped 5-fold CV, 190 patients, 14,928 joints) | Value (95% CI) |
-|---|---|
-| **Joint-level erosion AUROC** (any erosion, SvdH ≥ 1) | **0.804 (0.786–0.822)** |
-| Definite erosions (SvdH ≥ 2 vs 0) | 0.897 |
-| Minimal erosions (SvdH 1 vs 0) | 0.767 |
-| Erosion grade agreement, QWK | 0.531 (0.465–0.585) |
-| Specificity / NPV at the locked 90%-sensitivity threshold | 0.479 / 0.947 |
-| Calibration error after Platt scaling (ECE) | 0.010 |
+| Metric | Internal CV (190 patients, 14,928 joints) | **Sealed test** (101 patients, 4,272 joints, run once) |
+|---|---|---|
+| **Joint-level erosion AUROC** (any erosion, SvdH ≥ 1) | 0.804 (0.786–0.822) | **0.820 (0.801–0.834)** |
+| Definite erosions (SvdH ≥ 2 vs 0) | 0.897 | 0.880 (0.858–0.900) |
+| Minimal erosions (SvdH 1 vs 0) | 0.767 | 0.784 (0.756–0.800) |
+| Erosion grade agreement, QWK (published benchmark 0.452) | 0.531 (0.465–0.585) | **0.588 (0.478–0.678)** |
+| Sensitivity / specificity at the locked threshold | 0.90 / 0.479 | 0.844 / 0.621 |
+| NPV at the locked threshold | 0.947 | 0.915 |
+| Leave-one-hospital-out, single ConvNeXt-T | 0.697 pooled; 0.71–0.76 per hospital | — |
 
 - 95% CIs come from a patient-clustered bootstrap (2,000 resamples).
 - The ensemble and every analysis decision were pre-registered in
-  [`docs/analysis_plan.md`](docs/analysis_plan.md) before the results they govern.
-- The final model is locked in [`results/final_lock.json`](results/final_lock.json) (tag `model-lock`).
-- **Sealed test** (official RAM-H1200 test split, 101 patients, evaluated once): *pending.*
+  [`docs/analysis_plan.md`](docs/analysis_plan.md) before the results they govern (amendments A1–A7).
+- The model was locked in [`results/final_lock.json`](results/final_lock.json) (tag `model-lock`)
+  before the official test split was opened once (tag `v1.0-test`).
+- **Read the limits:** the test set is 94% one hospital, all data are from one city, and holding out
+  a hospital costs 0.03–0.08 AUROC. See the [model card](docs/model_card.md).
 
 ### How the model got there
 
@@ -52,15 +55,18 @@ The full table, including the runs that did not help, is in `results/summary.csv
   grade 1. Zooming finger crops did not help; ensembling did.
 - **The model overfits within a few epochs** on about 150 training patients per fold. This motivates
   the planned self-supervised pretraining study.
-- **No hospital is an outlier:** AUROC by hospital is 0.79–0.82.
+- **No hospital is an outlier in CV** (AUROC by hospital 0.79–0.82), but a model that has never seen
+  a hospital does worse there (LOCO 0.71–0.76). External validation comes before any clinical claim.
+- **The locked Platt calibration did not transfer** to the full-data models (test ECE 0.081 vs 0.023
+  for the raw probability), so the app uses the raw ensemble probability.
 
 ## Status
 
 | Phase | What | State |
 |---|---|---|
-| 0 | Pre-registered analysis plan with dated amendments (A1–A6) | done |
+| 0 | Pre-registered analysis plan with dated amendments (A1–A7) | done |
 | 1 | Joint-level erosion detection: baselines → 6-model ensemble, 5-fold CV | done (0.804) |
-| 1b | Leave-one-center-out validation and the sealed official test split | running |
+| 1b | Leave-one-center-out validation and the sealed official test split | done (test 0.820) |
 | 2 | Automatic joint detection for whole-hand uploads | next |
 | 3 | Research-use web demo with per-joint heatmaps | next |
 | 4 | I-JEPA self-supervised pretraining and a label-efficiency study | planned |
@@ -90,7 +96,7 @@ writes `results/<run>/` containing its config, git SHA, out-of-fold predictions 
 
 ```
 configs/       base.yaml + exp/<name>.yaml (one file per experiment)
-docs/          analysis_plan.md (pre-registration + amendments), data.md, KAGGLE.md, WORKFLOW.md
+docs/          analysis_plan.md (pre-registration + amendments), model_card.md, data.md, KAGGLE.md, WORKFLOW.md
 scripts/       data download/inspection, crop stats, speed test, ensembling, model lock, final test
 splits/        committed joint manifest and patient-grouped folds (no images, ever)
 src/arthritis/ data, models, training, metrics, evaluation, inference

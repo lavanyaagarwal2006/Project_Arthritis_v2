@@ -314,3 +314,41 @@ The recompute of ens6 from the member files matches the Kaggle output to 1e-16. 
    twice. Results are reported whatever they are, and tagged `v1.0-test`.
 
 The benchmark comparison is grade QWK on the same official test split, against the published 0.4522.
+
+**A7 (2026-10-29). Sealed-test and leave-one-center-out results (commit 8f8bec9, lock tag `model-lock`).
+Reported as run; no analysis below changed any locked parameter.**
+
+`scripts/final_test.py` ran once on the official RAM-H1200 test split (101 patients, 267 hands,
+4,272 joints, erosion prevalence 27.0%) with the six full-data members, threshold, Platt and grade
+cut-offs from `results/final_lock.json`. The Kaggle working tree was marked `-dirty`, most likely from the
+downloaded data, logs and new result files; this was not checked at run time.
+
+- **Primary endpoint, joint-level any erosion AUROC: 0.820 (0.801–0.834).** This is 0.016 above the
+  internal CV estimate (0.804), within its interval. Recomputed from `test_predictions.csv`: 0.8201.
+- **AUPRC** 0.630 (0.542–0.689). **Grade 1 vs 0:** 0.784 (0.756–0.800). **Grade ≥ 2 vs 0:** 0.880
+  (0.858–0.900).
+- **Locked threshold (0.191, set for 90% sensitivity on OOF):** sensitivity 0.844, specificity
+  0.621, PPV 0.452, NPV 0.915. Sensitivity fell short of the 90% target by 5.6 points; the
+  threshold did not transfer exactly.
+- **Calibration:** ECE of the raw ensemble probability 0.023; ECE after the locked Platt map 0.081.
+  The Platt map was fitted on fold-model OOF predictions and does not transfer to the full-data
+  members, which are more confident. Platt scaling is not used for the next version until it is
+  refitted on held-out data from the full-data members; this decision is made after seeing the
+  test and is labelled post hoc.
+- **Grade agreement, QWK with locked cut-offs:** 0.588 (0.478–0.678), against the published
+  RAM-H1200 benchmark of 0.4522 on the same split. The lower confidence bound is above the
+  benchmark. Balanced accuracy 0.523.
+- **Hand-level any erosion:** 0.608 (0.431–0.776). Not interpretable: only 12 of 267 test hands are
+  erosion-free, below the 30-hand rule in Section 3.
+- **By center:** HMCRD 0.812 (95 of 101 patients). HU2 (1 patient), SARC (3) and SCGH (2) are too
+  small to interpret, so the sealed test is effectively a single-center result.
+- **By joint:** weakest IP 0.654, PIP-S 0.665, CMC-T 0.686; strongest R 0.924, L 0.989. Same pattern
+  as CV.
+
+**Leave-one-center-out, single model `convnext_tiny_v3` (CV 0.786):** pooled AUROC 0.697
+(0.675–0.718); held-out HMCRD 0.706 (trained on 76 patients), SARC 0.760, SCGH 0.758. 352 joints
+from centers with < 50 hands were train-only. Holding out a hospital costs 0.03–0.08 AUROC for a
+single model, part of which is the smaller training set. The pooled value sits below every center
+because scores are not calibrated across folds. This is the honest estimate of the generalisation
+gap to a new site, and it is why external validation at a different institution comes before any
+clinical claim.

@@ -1,0 +1,20 @@
+run convnext_tiny_v3_full: 14928 dev joints / 190 patients, git 8f8bec9
+  full fit: train 162 pts, inner val 28 pts
+    device CUDA | 27.8M params | heads: erosion 4
+    EMA of weights, decay 0.995
+    epoch 00 loss 0.4338 inner-val AUROC 0.6113 (92s)
+    epoch 01 loss 0.3376 inner-val AUROC 0.7672 (72s)
+    epoch 02 loss 0.3019 inner-val AUROC 0.8036 (75s)
+    epoch 03 loss 0.2849 inner-val AUROC 0.8188 (73s)
+    epoch 04 loss 0.2671 inner-val AUROC 0.8251 (73s)
+    epoch 05 loss 0.2517 inner-val AUROC 0.8312 (75s)
+    epoch 06 loss 0.2370 inner-val AUROC 0.8379 (74s)
+    epoch 07 loss 0.2322 inner-val AUROC 0.8420 (73s)
+    epoch 08 loss 0.2170 inner-val AUROC 0.8399 (75s)
+    epoch 09 loss 0.2059 inner-val AUROC 0.8381 (73s)
+    epoch 10 loss 0.1974 inner-val AUROC 0.8369 (74s)
+    epoch 11 loss 0.1870 inner-val AUROC 0.8324 (75s)
+    epoch 12 loss 0.1821 inner-val AUROC 0.8282 (74s)
+    epoch 13 loss 0.1769 inner-val AUROC 0.8309 (73s)
+    early stop at epoch 13 (best inner-val AUROC 0.8420)
+saved /tmp/pa/checkpoints/convnext_tiny_v3_full/full.pt

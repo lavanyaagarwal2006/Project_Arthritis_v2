@@ -1,0 +1,20 @@
+run densenet121_v3_384_full: 14928 dev joints / 190 patients, git 8f8bec9
+  full fit: train 162 pts, inner val 28 pts
+    device CUDA | 7.0M params | heads: erosion 4
+    EMA of weights, decay 0.995
+    epoch 00 loss 0.6157 inner-val AUROC 0.5875 (222s)
+    epoch 01 loss 0.3774 inner-val AUROC 0.7415 (221s)
+    epoch 02 loss 0.3165 inner-val AUROC 0.7968 (221s)
+    epoch 03 loss 0.2872 inner-val AUROC 0.8120 (222s)
+    epoch 04 loss 0.2700 inner-val AUROC 0.8173 (218s)
+    epoch 05 loss 0.2575 inner-val AUROC 0.8255 (215s)
+    epoch 06 loss 0.2401 inner-val AUROC 0.8267 (213s)
+    epoch 07 loss 0.2290 inner-val AUROC 0.8277 (214s)
+    epoch 08 loss 0.2183 inner-val AUROC 0.8157 (213s)
+    epoch 09 loss 0.2073 inner-val AUROC 0.8127 (213s)
+    epoch 10 loss 0.1977 inner-val AUROC 0.8184 (213s)
+    epoch 11 loss 0.1897 inner-val AUROC 0.8208 (216s)
+    epoch 12 loss 0.1855 inner-val AUROC 0.8197 (217s)
+    epoch 13 loss 0.1771 inner-val AUROC 0.8143 (217s)
+    early stop at epoch 13 (best inner-val AUROC 0.8277)
+saved /tmp/pa/checkpoints/densenet121_v3_384_full/full.pt

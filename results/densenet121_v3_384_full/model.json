@@ -1,0 +1,5 @@
+{
+  "exp": "densenet121_v3_384",
+  "checkpoint": "checkpoints/densenet121_v3_384_full/full.pt",
+  "git_sha": "8f8bec9"
+}

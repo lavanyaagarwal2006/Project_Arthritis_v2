@@ -1,0 +1,5 @@
+{
+  "exp": "convnext_tiny_v3",
+  "checkpoint": "checkpoints/convnext_tiny_v3_full/full.pt",
+  "git_sha": "8f8bec9"
+}

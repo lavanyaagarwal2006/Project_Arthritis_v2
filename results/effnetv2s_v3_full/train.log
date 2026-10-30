@@ -1,0 +1,20 @@
+run effnetv2s_v3_full: 14928 dev joints / 190 patients, git 8f8bec9
+  full fit: train 162 pts, inner val 28 pts
+    device CUDA | 20.2M params | heads: erosion 4
+    EMA of weights, decay 0.995
+    epoch 00 loss 0.6003 inner-val AUROC 0.5348 (101s)
+    epoch 01 loss 0.3703 inner-val AUROC 0.6727 (86s)
+    epoch 02 loss 0.3194 inner-val AUROC 0.7379 (91s)
+    epoch 03 loss 0.2969 inner-val AUROC 0.7706 (86s)
+    epoch 04 loss 0.2818 inner-val AUROC 0.7856 (88s)
+    epoch 05 loss 0.2651 inner-val AUROC 0.7952 (87s)
+    epoch 06 loss 0.2511 inner-val AUROC 0.7987 (86s)
+    epoch 07 loss 0.2403 inner-val AUROC 0.8008 (91s)
+    epoch 08 loss 0.2312 inner-val AUROC 0.7983 (86s)
+    epoch 09 loss 0.2231 inner-val AUROC 0.7931 (91s)
+    epoch 10 loss 0.2115 inner-val AUROC 0.7871 (86s)
+    epoch 11 loss 0.2044 inner-val AUROC 0.7870 (86s)
+    epoch 12 loss 0.1985 inner-val AUROC 0.7855 (91s)
+    epoch 13 loss 0.1921 inner-val AUROC 0.7833 (86s)
+    early stop at epoch 13 (best inner-val AUROC 0.8008)
+saved /tmp/pa/checkpoints/effnetv2s_v3_full/full.pt
